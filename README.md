@@ -2,6 +2,18 @@
 
 Java 21 / Spring Boot REST API for Yi Sivlay's portfolio and technical-blog CMS. PostgreSQL holds content, profile data, administrator credentials, revisions, contact messages, media metadata, and audit events. Flyway migrations define the schema; Hibernate validates it. The companion `isldevs/portfolio-web` repository is independently built and released.
 
+## Manage content
+
+Start this backend, PostgreSQL, and the companion web application, then append `/admin/login` to the website address. Sign in through the website, not the backend's port. The public website footer also has an **Admin login** link.
+
+There are no default credentials. For a new database, set your own `ADMIN_USERNAME` and `ADMIN_PASSWORD` before the first backend startup; see [database and secure bootstrap](#database-and-secure-bootstrap) below. The password must contain at least 14 characters and fit within 72 UTF-8 bytes. Bootstrap creates an initial account only: changing environment variables never changes an existing account. Change an existing password under **Security** after signing in.
+
+The prepared cloud workspace has existing development credentials in the protected `/workspace/.runtime/dev.env` file. Read them privately in your own terminal/editor; never paste its contents or credential values into chat or logs. This file is not part of fresh clones, which need credentials you choose yourself.
+
+In the admin sidebar, choose **Projects → Add project** or **Blog posts → Add article**. **Save draft** keeps the record private; **Publish project** or **Publish article** makes it visible publicly. Manage the introduction under **Profile**, employment under **Experience**, expertise under **Skills**, and longer technical narratives under **Case studies**. **Media library** manages files, **Messages** is the contact inbox, and **Settings** controls site configuration; **Categories** and **Tags** organize content.
+
+Edits persist in PostgreSQL, and published changes appear on the public website without a frontend rebuild or deployment. Keep this backend running for sign-in, editing, and public API reads. See [architecture and the API contract](docs/architecture.md) for integration details.
+
 ## Prerequisites
 
 - JDK 21, with `JAVA_HOME` and `java` available.
@@ -36,7 +48,7 @@ $env:MEDIA_DIRECTORY = Join-Path $PWD 'uploads'
 
 On Linux/macOS, export the same variables and run `./gradlew bootRun`. Flyway applies pending migrations at startup before the API serves requests. Set `SEED_DEMO=false` before the first startup to avoid demonstration content. Seeded sample projects and articles are labeled as demonstrations; the profile includes only the supplied identity. No employment history or private contact information is invented.
 
-Bootstrap is only for creating the initial administrator. After it succeeds, remove `ADMIN_PASSWORD` from the service environment and use the authenticated password-change screen for subsequent changes. Use a unique password of at least 14 characters. For a secure production origin, set `SESSION_COOKIE_SECURE=true` and use the provided Nginx configuration. In-memory sessions expire after 30 minutes of inactivity; a process restart signs users out.
+Bootstrap is only for creating the initial administrator. After it succeeds, remove `ADMIN_PASSWORD` from the service environment and use the authenticated password-change screen for subsequent changes. Use a unique password of at least 14 characters and no more than 72 UTF-8 bytes. For a secure production origin, set `SESSION_COOKIE_SECURE=true` and use the provided Nginx configuration. In-memory sessions expire after 30 minutes of inactivity; a process restart signs users out.
 
 ## Build and test
 
