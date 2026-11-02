@@ -1,0 +1,28 @@
+[Unit]
+Description=Yi Sivlay portfolio Spring Boot API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=portfolio-api
+Group=portfolio-api
+WorkingDirectory=/srv/portfolio/backend/current
+EnvironmentFile=/etc/portfolio/backend.env
+Environment=SERVER_ADDRESS=127.0.0.1
+Environment=PORT=8080
+Environment=SESSION_COOKIE_SECURE=true
+Environment=MEDIA_DIRECTORY=/var/lib/portfolio/media
+ExecStart=/usr/bin/java -XX:MaxRAMPercentage=60 -jar app.jar
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=45
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/portfolio/media
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

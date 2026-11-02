@@ -1,0 +1,50 @@
+name: Package backend release
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Unique release ID (letters, digits, dot, dash, underscore)
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: portfolio_test
+          POSTGRES_USER: portfolio_test
+          POSTGRES_PASSWORD: ci-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      TEST_DB_URL: jdbc:postgresql://127.0.0.1:5432/portfolio_test
+      DB_USERNAME: portfolio_test
+      DB_PASSWORD: ci-test-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build tested backend artifact
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          mkdir -p dist
+          ./deploy/package-release.sh "$RELEASE_ID" "$PWD/dist/portfolio-backend.tar.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-backend-release
+          path: dist/*
+          if-no-files-found: error

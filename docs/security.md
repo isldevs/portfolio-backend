@@ -1,0 +1,11 @@
+# Security and operational boundaries
+
+The backend enforces administrator authorization; frontend route guards are additional UX protection. Authentication uses BCrypt-hashed passwords and server sessions, with CSRF tokens for state-changing requests. Login throttling and contact rate limits are process-local controls appropriate to this single-instance deployment; restarting the process resets those counters. A future multi-instance deployment needs shared enforcement. Password changes invalidate the authenticated session.
+
+Run the API and database on loopback with only the trusted reverse proxy exposed. Secure cookies require production HTTPS and `SESSION_COOKIE_SECURE=true`. Do not relax TLS verification, enable blanket CORS, expose stack traces, or put authentication tokens in browser storage. Bootstrap passwords are supplied securely through the process environment and removed after first account creation. Use a unique password of at least 14 characters.
+
+Structured editor content is validated and rendered through allowed nodes rather than executed as MDX. Keep dependencies patched and test malicious links, image sources, oversized/deep documents, and Mermaid diagrams after editor/renderer changes. Uploads enforce byte/type/size/name checks and generated storage keys. Public media is intended for public portfolio assets; use private visibility for files that should require authentication. Validate private downloads in the deployed proxy configuration.
+
+Backups and contact messages contain sensitive data. Restrict filesystem and database access, avoid logging request bodies/credentials/cookies, and decide retention/deletion policy with the owner. Administrator and editorial changes are audited; audit storage is operational history, not a tamper-proof compliance ledger. Local storage is supported for a single VPS through a storage abstraction; S3 deployment needs a separately configured and tested adapter.
+
+Before launch, test real PostgreSQL migrations, authenticated CRUD/publication, draft exclusion, stale-version conflicts, taxonomy references, contact inbox isolation, CSRF rejection, and invalid/private media handling. Monitor failed logins, unexpected 5xx responses, backup failures, and disk capacity without collecting secret values. No external security audit or penetration test is claimed.
