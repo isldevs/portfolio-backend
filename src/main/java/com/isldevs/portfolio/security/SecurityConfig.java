@@ -7,6 +7,10 @@ import org.springframework.context.annotation.*;
 import org.springframework.http.*;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.annotation.web.configurers.RequestCacheConfigurer;
+import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -112,15 +116,15 @@ public class SecurityConfig {
                     .denyAll())
         .sessionManagement(
             s ->
-                s.sessionFixation(f -> f.migrateSession())
+                s.sessionFixation(SessionManagementConfigurer.SessionFixationConfigurer::migrateSession)
                     .maximumSessions(5)
                     .sessionRegistry(registry)
                     .expiredSessionStrategy(
                         event -> problem(event.getResponse(), 401, "Session expired", mapper)))
-        .requestCache(c -> c.disable())
-        .formLogin(f -> f.disable())
-        .httpBasic(b -> b.disable())
-        .logout(l -> l.disable())
+        .requestCache(RequestCacheConfigurer::disable)
+        .formLogin(AbstractHttpConfigurer::disable)
+        .httpBasic(AbstractHttpConfigurer::disable)
+        .logout(AbstractHttpConfigurer::disable)
         .exceptionHandling(
             e ->
                 e.authenticationEntryPoint(
@@ -131,7 +135,7 @@ public class SecurityConfig {
         .headers(
             h ->
                 h.contentTypeOptions(c -> {})
-                    .frameOptions(f -> f.deny())
+                    .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
                     .referrerPolicy(
                         r ->
                             r.policy(

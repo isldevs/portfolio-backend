@@ -146,8 +146,8 @@ class MediaContactIntegrationTest {
 
   private static String submission() {
     return "{\"name\":\"Integration"
-               + " Visitor\",\"email\":\"visitor@example.com\",\"subject\":\"Integration test"
-               + " subject\",\"message\":\"This is a valid integration test"
-               + " message.\",\"website\":\"\"}";
+        + " Visitor\",\"email\":\"visitor@example.com\",\"subject\":\"Integration test"
+        + " subject\",\"message\":\"This is a valid integration test"
+        + " message.\",\"website\":\"\"}";
   }
 }

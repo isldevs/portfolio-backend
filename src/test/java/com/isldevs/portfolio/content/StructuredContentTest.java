@@ -44,7 +44,8 @@ class StructuredContentTest {
   @Test
   void acceptsOnlyTheTrustedPortraitAssetAndSafeLocalMediaPathsForImages() {
     for (String url :
-        List.of("/images/yi-sivlay.png", "/api/v1/public/media/f662b083-066b-4321-b5d1-921fef7911f8")) {
+        List.of(
+            "/images/yi-sivlay.png", "/api/v1/public/media/f662b083-066b-4321-b5d1-921fef7911f8")) {
       assertThat(StructuredContent.safeUrl(url)).as(url).isTrue();
       StructuredContent.validate(imageDocument(url));
     }
