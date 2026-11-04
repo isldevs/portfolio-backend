@@ -1,17 +1,18 @@
 package com.isldevs.portfolio.media;
 
+import com.isldevs.portfolio.common.AuditService;
+import com.isldevs.portfolio.content.ContentRepository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -22,12 +23,24 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class MediaService {
   private static final Logger LOG = LoggerFactory.getLogger(MediaService.class);
-  private final JdbcTemplate jdbc;
+  private final MediaAssetRepository assets;
+  private final MediaMapper mapper;
+  private final ContentRepository content;
+  private final AuditService audit;
   private final MediaStorage storage;
   private final MediaValidator validator;
 
-  public MediaService(JdbcTemplate jdbc, MediaStorage storage, MediaValidator validator) {
-    this.jdbc = jdbc;
+  public MediaService(
+      MediaAssetRepository assets,
+      MediaMapper mapper,
+      ContentRepository content,
+      AuditService audit,
+      MediaStorage storage,
+      MediaValidator validator) {
+    this.assets = assets;
+    this.mapper = mapper;
+    this.content = content;
+    this.audit = audit;
     this.storage = storage;
     this.validator = validator;
   }
@@ -49,26 +62,6 @@ public class MediaService {
   private record Stored(Asset asset, String key) {}
 
   public record Download(Asset asset, Path path) {}
-
-  private final RowMapper<Stored> mapper =
-      (rs, row) -> {
-        UUID id = rs.getObject("id", UUID.class);
-        Visibility visibility = Visibility.valueOf(rs.getString("visibility"));
-        String url =
-            visibility == Visibility.PUBLIC
-                ? "/api/v1/public/media/" + id
-                : "/api/v1/admin/media/" + id + "/content";
-        return new Stored(
-            new Asset(
-                id,
-                url,
-                rs.getString("original_name"),
-                rs.getString("content_type"),
-                rs.getLong("size"),
-                visibility,
-                rs.getObject("created_at", OffsetDateTime.class)),
-            rs.getString("storage_key"));
-      };
 
   @Transactional
   public Asset upload(MultipartFile file, Visibility visibility, String actor) {
@@ -98,17 +91,16 @@ public class MediaService {
             if (status != STATUS_COMMITTED) removeFile(key);
           }
         });
-    jdbc.update(
-        "INSERT INTO media_assets(id,storage_key,original_name,content_type,size,visibility) VALUES"
-            + " (?,?,?,?,?,?)",
-        id,
-        key,
-        original,
-        type.contentType(),
-        bytes.length,
-        visibility.name());
-    audit("UPLOAD", id, actor);
-    return getStored(id).asset();
+    MediaAsset asset = new MediaAsset();
+    asset.id = id;
+    asset.storageKey = key;
+    asset.originalName = original;
+    asset.contentType = type.contentType();
+    asset.size = bytes.length;
+    asset.visibility = visibility;
+    assets.saveAndFlush(asset);
+    audit.record("UPLOAD", "media_assets", id, actor);
+    return mapper.toDto(asset);
   }
 
   @Transactional(readOnly = true)
@@ -121,29 +113,22 @@ public class MediaService {
                 ? ""
                 : q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_"))
             + "%";
-    Long count =
-        jdbc.queryForObject(
-            "SELECT count(*) FROM media_assets WHERE original_name ILIKE ?", Long.class, term);
-    List<Asset> assets =
-        jdbc
-            .query(
-                "SELECT * FROM media_assets WHERE original_name ILIKE ? ORDER BY created_at DESC,id"
-                    + " LIMIT ? OFFSET ?",
-                mapper,
-                term,
-                size,
-                (long) page * size)
-            .stream()
-            .map(Stored::asset)
-            .toList();
-    long total = count == null ? 0 : count;
+    Specification<MediaAsset> spec =
+        (root, query, cb) ->
+            cb.like(
+                cb.lower(root.get("originalName")), term.toLowerCase(java.util.Locale.ROOT), '\\');
+    var result =
+        assets.findAll(
+            spec,
+            PageRequest.of(
+                page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"))));
     return Map.of(
         "content",
-        assets,
+        result.map(mapper::toDto).getContent(),
         "totalElements",
-        total,
+        result.getTotalElements(),
         "totalPages",
-        (total + size - 1) / size,
+        result.getTotalPages(),
         "number",
         page,
         "size",
@@ -171,22 +156,13 @@ public class MediaService {
     // Keep assets referenced by a draft, a published item or the profile. False positives are safer
     // than broken references.
     String term = "%" + id + "%";
-    Long references =
-        jdbc.queryForObject(
-            "SELECT (SELECT count(*) FROM content_items WHERE body::text LIKE ? OR data::text LIKE"
-                + " ?) + (SELECT count(*) FROM profiles WHERE data::text LIKE ?) + (SELECT count(*)"
-                + " FROM blog_revisions WHERE snapshot::text LIKE ?)",
-            Long.class,
-            term,
-            term,
-            term,
-            term);
-    if (references != null && references > 0)
+    if (content.countMediaReferences(term) > 0)
       throw new ResponseStatusException(
           HttpStatus.CONFLICT,
           "Media is referenced by content or the profile; remove those references first");
-    jdbc.update("DELETE FROM media_assets WHERE id=?", id);
-    audit("DELETE", id, actor);
+    assets.deleteById(id);
+    assets.flush();
+    audit.record("DELETE", "media_assets", id, actor);
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override
@@ -197,20 +173,12 @@ public class MediaService {
   }
 
   private Stored getStored(UUID id) {
-    return jdbc.query("SELECT * FROM media_assets WHERE id=?", mapper, id).stream()
-        .findFirst()
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Media not found"));
-  }
-
-  private void audit(String action, UUID id, String actor) {
-    jdbc.update(
-        "INSERT INTO audit_logs(id,action,resource,resource_id,actor,created_at) VALUES"
-            + " (?,?,?,?,?,CURRENT_TIMESTAMP)",
-        UUID.randomUUID(),
-        action,
-        "media_assets",
-        id.toString(),
-        actor);
+    MediaAsset asset =
+        assets
+            .findById(id)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Media not found"));
+    return new Stored(mapper.toDto(asset), asset.storageKey);
   }
 
   private void removeFile(String key) {

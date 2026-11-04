@@ -1,7 +1,8 @@
 package com.isldevs.portfolio.content;
 
+import com.isldevs.portfolio.common.*;
+import com.isldevs.portfolio.contact.*;
 import java.util.*;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,11 +10,19 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/admin")
 public class DashboardController {
   private final ContentRepository content;
-  private final JdbcTemplate jdbc;
+  private final ContactMessageRepository messages;
+  private final AuditLogRepository logs;
+  private final AuditMapper mapper;
 
-  public DashboardController(ContentRepository content, JdbcTemplate jdbc) {
+  public DashboardController(
+      ContentRepository content,
+      ContactMessageRepository messages,
+      AuditLogRepository logs,
+      AuditMapper mapper) {
     this.content = content;
-    this.jdbc = jdbc;
+    this.messages = messages;
+    this.logs = logs;
+    this.mapper = mapper;
   }
 
   @GetMapping("/dashboard")
@@ -31,18 +40,14 @@ public class DashboardController {
         "draftArticles",
         content.countByKindAndStatus("articles", "DRAFT"),
         "unreadMessages",
-        jdbc.queryForObject(
-            "SELECT count(*) FROM contact_messages WHERE status='UNREAD'", Long.class),
+        messages.countByStatus(ContactService.Status.UNREAD),
         "recentActivity",
-        jdbc.queryForList(
-            "SELECT id,action,resource,resource_id AS \"resourceId\",actor,created_at AS"
-                + " \"createdAt\" FROM audit_logs ORDER BY created_at DESC LIMIT 15"));
+        logs.findTop15ByOrderByCreatedAtDesc().stream().map(mapper::toDto).toList());
   }
 
   @GetMapping("/audit")
-  public List<Map<String, Object>> audit() {
-    return jdbc.queryForList(
-        "SELECT id,action,resource,resource_id AS \"resourceId\",actor,created_at AS \"createdAt\""
-            + " FROM audit_logs ORDER BY created_at DESC LIMIT 100");
+  @Transactional(readOnly = true)
+  public List<AuditDto> audit() {
+    return logs.findTop100ByOrderByCreatedAtDesc().stream().map(mapper::toDto).toList();
   }
 }

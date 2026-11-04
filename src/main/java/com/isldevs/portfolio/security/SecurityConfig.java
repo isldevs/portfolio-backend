@@ -116,7 +116,8 @@ public class SecurityConfig {
                     .denyAll())
         .sessionManagement(
             s ->
-                s.sessionFixation(SessionManagementConfigurer.SessionFixationConfigurer::migrateSession)
+                s.sessionFixation(
+                        SessionManagementConfigurer.SessionFixationConfigurer::migrateSession)
                     .maximumSessions(5)
                     .sessionRegistry(registry)
                     .expiredSessionStrategy(

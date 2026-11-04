@@ -18,22 +18,4 @@ public record ContentDto(
     Long version,
     Instant createdAt,
     Instant updatedAt,
-    Instant publishedAt) {
-  public static ContentDto from(ContentItem c) {
-    return new ContentDto(
-        c.id,
-        c.kind,
-        c.title,
-        c.slug,
-        c.summary,
-        c.body,
-        c.data,
-        c.status,
-        c.featured,
-        c.displayOrder,
-        c.version,
-        c.createdAt,
-        c.updatedAt,
-        c.publishedAt);
-  }
-}
+    Instant publishedAt) {}

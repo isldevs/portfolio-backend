@@ -57,3 +57,9 @@ Updates send the last observed `version`. A conflict response means another edit
 - `/api/v1/admin/media` supports listing and authorized multipart uploads using field `file`. Returned media includes `id`, `url`, `originalName`, `contentType`, `size`, and `createdAt`. Public media URLs use `/api/v1/public/media/{id}`. Uploads accept optional `visibility` (`PUBLIC` or `PRIVATE`, default `PUBLIC`). Private content is downloaded through authenticated `/api/v1/admin/media/{id}/content`; public endpoints reject private assets. Public URLs are intended for public portfolio assets, not private document storage.
 
 The generated OpenAPI schema from the running backend is authoritative for exact validation and operation details. Keep the schema/client synchronized when changing endpoints in either repository. Errors use RFC 9457 Problem Details rather than leaking stack traces or database diagnostics.
+
+## Persistence and mapping
+
+All application persistence uses Spring Data JPA repositories. Content, profiles and administrator accounts retain their existing entities; messages, media metadata, blog revisions and audit logs also have JPA entities. Flyway owns the schema and Hibernate validates it. PostgreSQL JSON reference checks remain native queries declared on the content repository.
+
+MapStruct 1.6.3 generates Spring mapper beans for content, contact messages, media and audit responses during Java compilation. Mappers use `ReportingPolicy.ERROR` so new response fields must be mapped deliberately. Services retain validation and lifecycle rules; client DTOs never overwrite entity identity, optimistic-lock versions or timestamps. Contact message updates use JPA `@Version`; media filesystem cleanup still runs after transaction completion. Existing API paths and response fields are preserved.

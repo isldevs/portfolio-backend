@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.util.*;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,14 +25,20 @@ public class ContentService {
           "tags",
           "settings");
   private final ContentRepository repo;
-  private final JdbcTemplate jdbc;
+  private final BlogRevisionRepository revisions;
+  private final ContentMapper contentMapper;
   private final AuditService audit;
   private final ObjectMapper mapper;
 
   public ContentService(
-      ContentRepository repo, JdbcTemplate jdbc, AuditService audit, ObjectMapper mapper) {
+      ContentRepository repo,
+      BlogRevisionRepository revisions,
+      ContentMapper contentMapper,
+      AuditService audit,
+      ObjectMapper mapper) {
     this.repo = repo;
-    this.jdbc = jdbc;
+    this.revisions = revisions;
+    this.contentMapper = contentMapper;
     this.audit = audit;
     this.mapper = mapper;
   }
@@ -120,7 +125,7 @@ public class ContentService {
     Page<ContentItem> result = repo.findAll(spec, PageRequest.of(boundedPage, boundedSize, order));
     return Map.of(
         "content",
-        result.getContent().stream().map(ContentDto::from).toList(),
+        result.getContent().stream().map(contentMapper::toDto).toList(),
         "totalElements",
         result.getTotalElements(),
         "totalPages",
@@ -138,14 +143,14 @@ public class ContentService {
   @Transactional(readOnly = true)
   public ContentDto publicDetail(String kind, String slug) {
     kind(kind);
-    return ContentDto.from(
+    return contentMapper.toDto(
         repo.findByKindAndSlugAndStatus(kind, slug, "PUBLISHED")
             .orElseThrow(ApiException::notFound));
   }
 
   @Transactional(readOnly = true)
   public ContentDto get(String kind, UUID id) {
-    return ContentDto.from(require(kind, id));
+    return contentMapper.toDto(require(kind, id));
   }
 
   private ContentItem require(String kind, UUID id) {
@@ -163,7 +168,7 @@ public class ContentService {
     repo.saveAndFlush(c);
     revision(c);
     audit.record("CREATE", kind, c.id);
-    return ContentDto.from(c);
+    return contentMapper.toDto(c);
   }
 
   public ContentDto update(String kind, UUID id, ContentDto input) {
@@ -178,7 +183,7 @@ public class ContentService {
     repo.saveAndFlush(c);
     revision(c);
     audit.record("UPDATE", kind, id);
-    return ContentDto.from(c);
+    return contentMapper.toDto(c);
   }
 
   public void delete(String kind, UUID id, Long version) {
@@ -193,17 +198,7 @@ public class ContentService {
   }
 
   private boolean referenced(ContentItem c) {
-    Long refs =
-        jdbc.queryForObject(
-            "SELECT count(*) FROM content_items WHERE id <> ? AND (data->>'category' IN (?,?) OR"
-                + " jsonb_exists(data->'tags',?) OR jsonb_exists(data->'tags',?))",
-            Long.class,
-            c.id,
-            c.slug,
-            c.title,
-            c.slug,
-            c.title);
-    return refs != null && refs > 0;
+    return repo.countTaxonomyReferences(c.id, c.slug, c.title) > 0;
   }
 
   private void check(ContentItem c, Long version) {
@@ -301,7 +296,7 @@ public class ContentService {
     repo.saveAndFlush(c);
     revision(c);
     audit.record(published ? "PUBLISH" : "UNPUBLISH", kind, id);
-    return ContentDto.from(c);
+    return contentMapper.toDto(c);
   }
 
   public ContentDto duplicate(String kind, UUID id) {
@@ -325,22 +320,17 @@ public class ContentService {
     repo.saveAndFlush(copy);
     revision(copy);
     audit.record("DUPLICATE", kind, copy.id);
-    return ContentDto.from(copy);
+    return contentMapper.toDto(copy);
   }
 
   private void revision(ContentItem c) {
     if (!c.kind.equals("articles")) return;
-    try {
-      jdbc.update(
-          "INSERT INTO blog_revisions(id,content_id,snapshot,actor,created_at) VALUES"
-              + " (?,?,?::jsonb,?,clock_timestamp())",
-          UUID.randomUUID(),
-          c.id,
-          mapper.writeValueAsString(ContentDto.from(c)),
-          actor());
-    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-      throw new IllegalStateException(e);
-    }
+    BlogRevision revision = new BlogRevision();
+    revision.contentId = c.id;
+    revision.snapshot =
+        mapper.convertValue(contentMapper.toDto(c), new TypeReference<Map<String, Object>>() {});
+    revision.actor = actor();
+    revisions.save(revision);
   }
 
   private String actor() {
@@ -353,25 +343,15 @@ public class ContentService {
   @Transactional(readOnly = true)
   public List<Map<String, Object>> revisions(UUID id) {
     require("articles", id);
-    return jdbc
-        .queryForList(
-            "SELECT id,created_at AS \"createdAt\",actor,snapshot FROM blog_revisions WHERE"
-                + " content_id=? ORDER BY created_at DESC LIMIT 100",
-            id)
-        .stream()
+    return revisions.findTop100ByContentIdOrderByCreatedAtDesc(id).stream()
         .map(
-            row -> {
-              try {
-                var m = new LinkedHashMap<String, Object>(row);
-                m.put(
-                    "snapshot",
-                    mapper.readValue(
-                        row.get("snapshot").toString(),
-                        new TypeReference<Map<String, Object>>() {}));
-                return (Map<String, Object>) m;
-              } catch (Exception e) {
-                throw new IllegalStateException(e);
-              }
+            revision -> {
+              Map<String, Object> row = new LinkedHashMap<>();
+              row.put("id", revision.id);
+              row.put("createdAt", revision.createdAt);
+              row.put("actor", revision.actor);
+              row.put("snapshot", revision.snapshot);
+              return row;
             })
         .toList();
   }
@@ -379,23 +359,14 @@ public class ContentService {
   public ContentDto restore(UUID id, UUID revisionId, Long version) {
     ContentItem c = require("articles", id);
     check(c, version);
-    List<String> found =
-        jdbc.query(
-            "SELECT snapshot::text FROM blog_revisions WHERE id=? AND content_id=?",
-            (rs, n) -> rs.getString(1),
-            revisionId,
-            id);
-    if (found.isEmpty()) throw ApiException.notFound();
-    try {
-      ContentDto snapshot = mapper.readValue(found.getFirst(), ContentDto.class);
-      apply(c, snapshot);
-      c.status = "DRAFT";
-      repo.saveAndFlush(c);
-      revision(c);
-      audit.record("RESTORE", "articles", id);
-      return ContentDto.from(c);
-    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-      throw new IllegalStateException(e);
-    }
+    BlogRevision found =
+        revisions.findByIdAndContentId(revisionId, id).orElseThrow(ApiException::notFound);
+    ContentDto snapshot = mapper.convertValue(found.snapshot, ContentDto.class);
+    apply(c, snapshot);
+    c.status = "DRAFT";
+    repo.saveAndFlush(c);
+    revision(c);
+    audit.record("RESTORE", "articles", id);
+    return contentMapper.toDto(c);
   }
 }

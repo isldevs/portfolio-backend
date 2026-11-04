@@ -12,4 +12,20 @@ public interface ContentRepository
   long countByKindAndStatus(String kind, String status);
 
   boolean existsByKindAndSlug(String kind, String slug);
+
+  @Query(
+      value =
+          "SELECT count(*) FROM content_items WHERE id <> :id AND (data->>'category' IN"
+              + " (:slug,:title) OR jsonb_exists(data->'tags',:slug) OR"
+              + " jsonb_exists(data->'tags',:title))",
+      nativeQuery = true)
+  long countTaxonomyReferences(UUID id, String slug, String title);
+
+  @Query(
+      value =
+          "SELECT (SELECT count(*) FROM content_items WHERE body::text LIKE :term OR data::text"
+              + " LIKE :term) + (SELECT count(*) FROM profiles WHERE data::text LIKE :term) +"
+              + " (SELECT count(*) FROM blog_revisions WHERE snapshot::text LIKE :term)",
+      nativeQuery = true)
+  long countMediaReferences(String term);
 }

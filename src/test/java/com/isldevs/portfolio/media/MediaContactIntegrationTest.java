@@ -144,6 +144,84 @@ class MediaContactIntegrationTest {
         .andExpect(status().isBadRequest());
   }
 
+  @Test
+  @WithMockUser(username = "mapping-admin", roles = "ADMIN")
+  void messageSearchEscapesWildcardsAndRepeatedUpdatesAdvanceVersion() throws Exception {
+    String response =
+        mvc.perform(
+                post("/api/v1/public/contact")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        submission().replace("Integration test subject", "Literal 100%_subject")))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    String id = json.readTree(response).get("id").asText();
+    mvc.perform(get("/api/v1/admin/messages").param("q", "100%_").param("status", "UNREAD"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Integration Visitor"))
+        .andExpect(jsonPath("$.content[0].email").value("visitor@example.com"))
+        .andExpect(jsonPath("$.content[0].createdAt").isNotEmpty());
+    mvc.perform(get("/api/v1/admin/messages").param("q", "101%_"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(0));
+    for (int version = 0; version < 2; version++) {
+      mvc.perform(
+              put("/api/v1/admin/messages/" + id)
+                  .with(csrf())
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"status\":\"UNREAD\",\"version\":" + version + "}"))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.version").value(version + 1));
+    }
+    mvc.perform(get("/api/v1/admin/audit"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].resourceId").value(id))
+        .andExpect(jsonPath("$[0].actor").value("mapping-admin"))
+        .andExpect(jsonPath("$[0].createdAt").isNotEmpty());
+    mvc.perform(get("/api/v1/admin/dashboard"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.unreadMessages").value(1));
+  }
+
+  @Test
+  @WithMockUser(username = "mapping-admin", roles = "ADMIN")
+  void publicMediaMappingAndSearchPreserveTheApiContract() throws Exception {
+    ByteArrayOutputStream image = new ByteArrayOutputStream();
+    ImageIO.write(new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB), "png", image);
+    MockMultipartFile upload =
+        new MockMultipartFile("file", "mapping-photo.png", "image/png", image.toByteArray());
+    String response =
+        mvc.perform(multipart("/api/v1/admin/media").file(upload).with(csrf()))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.visibility").value("PUBLIC"))
+            .andExpect(jsonPath("$.originalName").value("mapping-photo.png"))
+            .andExpect(jsonPath("$.contentType").value("image/png"))
+            .andExpect(jsonPath("$.createdAt").isNotEmpty())
+            .andExpect(jsonPath("$.storageKey").doesNotExist())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    JsonNode asset = json.readTree(response);
+    assertThat(asset.get("url").asText())
+        .isEqualTo("/api/v1/public/media/" + asset.get("id").asText());
+    mvc.perform(get("/api/v1/admin/media").param("q", "MAPPING-PHOTO"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(1));
+    mvc.perform(get("/api/v1/admin/media").param("q", "%"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(0));
+    mvc.perform(get(asset.get("url").asText()))
+        .andExpect(status().isOk())
+        .andExpect(content().bytes(image.toByteArray()));
+    mvc.perform(delete("/api/v1/admin/media/" + asset.get("id").asText()).with(csrf()))
+        .andExpect(status().isNoContent());
+    mvc.perform(get(asset.get("url").asText())).andExpect(status().isNotFound());
+  }
+
   private static String submission() {
     return "{\"name\":\"Integration"
         + " Visitor\",\"email\":\"visitor@example.com\",\"subject\":\"Integration test"
