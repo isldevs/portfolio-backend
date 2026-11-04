@@ -1,8 +1,11 @@
 package com.isldevs.portfolio.config;
 
 import com.isldevs.portfolio.auth.*;
-import com.isldevs.portfolio.content.*;
-import com.isldevs.portfolio.profile.*;
+import com.isldevs.portfolio.entity.content.ContentItem;
+import com.isldevs.portfolio.entity.content.ContentRepository;
+import com.isldevs.portfolio.entity.profile.Profile;
+import com.isldevs.portfolio.entity.profile.ProfileRepository;
+
 import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;

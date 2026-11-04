@@ -6,6 +6,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+
+import com.isldevs.portfolio.entity.contact.ContactRateLimiter;
 import org.junit.jupiter.api.Test;
 
 class ContactRateLimiterTest {
