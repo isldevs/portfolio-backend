@@ -37,7 +37,8 @@ class PortfolioIntegrationTest {
 
   @Autowired MockMvc mvc;
   @Autowired ObjectMapper json;
-  @Autowired AdminUserRepository users;
+  @Autowired
+  UserRepository users;
   @Autowired PasswordEncoder encoder;
 
   private Map<String, Object> item(String title, String slug, String status) {
@@ -259,7 +260,7 @@ class PortfolioIntegrationTest {
   void sessionLoginLogoutAndPasswordChangeWork() throws Exception {
     String password = "Test-only-long-password-" + UUID.randomUUID();
     String username = "test-" + UUID.randomUUID();
-    AdminUser u = new AdminUser();
+    User u = new User();
     u.username = username;
     u.passwordHash = encoder.encode(password);
     users.saveAndFlush(u);

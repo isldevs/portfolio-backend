@@ -1,21 +1,25 @@
 package com.isldevs.portfolio.entity.content;
 
-import jakarta.validation.constraints.*;
-import java.time.Instant;
-import java.util.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
-public record ContentDto(
-    UUID id,
-    String kind,
-    @NotBlank @Size(max = 240) String title,
-    @NotBlank @Pattern(regexp = "[a-z0-9]+(?:-[a-z0-9]+)*") @Size(max = 180) String slug,
-    @Size(max = 4000) String summary,
-    Map<String, Object> body,
-    Map<String, Object> data,
-    @Pattern(regexp = "DRAFT|PUBLISHED|ARCHIVED") String status,
-    Boolean featured,
-    Integer displayOrder,
-    Long version,
-    Instant createdAt,
-    Instant updatedAt,
-    Instant publishedAt) {}
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+
+public record ContentDto(UUID id,
+                         String kind,
+                         @NotBlank @Size(max = 240) String title,
+                         @NotBlank @Pattern(regexp = "[a-z0-9]+(?:-[a-z0-9]+)*") @Size(max = 180) String slug,
+                         @Size(max = 4000) String summary,
+                         Map<String, Object> body,
+                         Map<String, Object> data,
+                         @Pattern(regexp = "DRAFT|PUBLISHED|ARCHIVED") String status,
+                         Boolean featured,
+                         Integer displayOrder,
+                         Long version,
+                         Instant createdAt,
+                         Instant updatedAt,
+                         Instant publishedAt) {
+}

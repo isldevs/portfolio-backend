@@ -1,4 +1,4 @@
-CREATE TABLE admin_users
+CREATE TABLE users
 (
     id            uuid PRIMARY KEY,
     username      varchar(120) UNIQUE NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE profiles
     data       jsonb       NOT NULL DEFAULT '{}',
     updated_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE TABLE content_items
+CREATE TABLE contents
 (
     id            uuid PRIMARY KEY,
     kind          varchar(40)  NOT NULL,
@@ -34,17 +34,17 @@ CREATE TABLE content_items
     published_at  timestamptz,
     UNIQUE (kind, slug)
 );
-CREATE INDEX content_public_idx ON content_items (kind, status, display_order, published_at DESC);
-CREATE INDEX content_search_idx ON content_items USING gin (to_tsvector('english', title || ' ' || summary));
-CREATE TABLE blog_revisions
+CREATE INDEX content_public_idx ON contents (kind, status, display_order, published_at DESC);
+CREATE INDEX content_search_idx ON contents USING gin (to_tsvector('english', title || ' ' || summary));
+CREATE TABLE blogs
 (
     id         uuid PRIMARY KEY,
-    content_id uuid         NOT NULL REFERENCES content_items (id) ON DELETE CASCADE,
+    content_id uuid         NOT NULL REFERENCES contents (id) ON DELETE CASCADE,
     snapshot   jsonb        NOT NULL,
     created_at timestamptz  NOT NULL DEFAULT now(),
     actor      varchar(120) NOT NULL
 );
-CREATE INDEX revisions_content_idx ON blog_revisions (content_id, created_at DESC);
+CREATE INDEX content_idx ON blogs (content_id, created_at DESC);
 CREATE TABLE audit_logs
 (
     id          uuid PRIMARY KEY,

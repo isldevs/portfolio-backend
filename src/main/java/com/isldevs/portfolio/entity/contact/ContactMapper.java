@@ -6,5 +6,5 @@ import org.mapstruct.*;
     componentModel = MappingConstants.ComponentModel.SPRING,
     unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface ContactMapper {
-  ContactService.Message toDto(ContactMessage message);
+  Message toDto(Contact message);
 }

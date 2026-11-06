@@ -1,7 +1,7 @@
 package com.isldevs.portfolio.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.isldevs.portfolio.auth.AdminUserRepository;
+import com.isldevs.portfolio.auth.UserRepository;
 import jakarta.servlet.http.*;
 import org.springframework.context.annotation.*;
 import org.springframework.http.*;
@@ -26,7 +26,7 @@ public class SecurityConfig {
   }
 
   @Bean
-  UserDetailsService users(AdminUserRepository repo) {
+  UserDetailsService users(UserRepository repo) {
     return username ->
         repo.findByUsername(username)
             .map(u -> User.withUsername(u.username).password(u.passwordHash).roles("ADMIN").build())

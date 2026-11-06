@@ -3,6 +3,7 @@ package com.isldevs.portfolio.entity.contact;
 import com.isldevs.portfolio.common.AuditService;
 import jakarta.persistence.criteria.Predicate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -13,37 +14,22 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class ContactService {
-  private final ContactMessageRepository messages;
+
+  private final ContactRepository messages;
   private final ContactMapper mapper;
   private final AuditService audit;
 
-  public ContactService(
-      ContactMessageRepository messages, ContactMapper mapper, AuditService audit) {
+  public ContactService(ContactRepository messages,
+                        ContactMapper mapper,
+                        AuditService audit) {
     this.messages = messages;
     this.mapper = mapper;
     this.audit = audit;
   }
 
-  public enum Status {
-    UNREAD,
-    READ,
-    RESOLVED,
-    ARCHIVED
-  }
-
-  public record Message(
-      UUID id,
-      String name,
-      String email,
-      String subject,
-      String message,
-      Status status,
-      long version,
-      OffsetDateTime createdAt) {}
-
   @Transactional
-  public UUID submit(ContactController.Submission form) {
-    ContactMessage message = new ContactMessage();
+  public UUID submit(Submission form) {
+    Contact message = new Contact();
     message.name = form.name().strip();
     message.email = form.email().strip();
     message.subject = form.subject().strip();
@@ -53,9 +39,11 @@ public class ContactService {
 
   @Transactional(readOnly = true)
   public Map<String, Object> list(String q, Status status, int page, int size) {
+
     page = Math.max(0, page);
     size = Math.max(1, Math.min(100, size));
-    Specification<ContactMessage> spec =
+
+    Specification<Contact> spec =
         (root, query, cb) -> {
           List<Predicate> conditions = new ArrayList<>();
           if (q != null && !q.isBlank()) {
@@ -77,25 +65,21 @@ public class ContactService {
           if (status != null) conditions.add(cb.equal(root.get("status"), status));
           return cb.and(conditions.toArray(Predicate[]::new));
         };
-    var result =
-        messages.findAll(
-            spec,
-            PageRequest.of(
-                page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"))));
+
+    final Sort sort = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id"));
+    final PageRequest pageRequest = PageRequest.of(page, size, sort);
+    var result = messages.findAll(spec, pageRequest);
+
     return Map.of(
-        "content",
-        result.map(mapper::toDto).getContent(),
-        "totalElements",
-        result.getTotalElements(),
-        "totalPages",
-        result.getTotalPages(),
-        "number",
-        page,
-        "size",
-        size);
+        "content", result.map(mapper::toDto).getContent(),
+        "totalElements", result.getTotalElements(),
+        "totalPages", result.getTotalPages(),
+        "number", page,
+        "size", size
+    );
   }
 
-  private ContactMessage require(UUID id) {
+  private Contact require(UUID id) {
     return messages
         .findById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found"));
@@ -108,13 +92,12 @@ public class ContactService {
 
   @Transactional
   public Message update(UUID id, Status status, long version, String actor) {
-    ContactMessage message = require(id);
+    Contact message = require(id);
     if (message.version != version)
-      throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "Message changed; reload before saving");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Message changed; reload before saving");
     message.status = status;
     // Updating a message always advances its version, including repeated status assignments.
-    message.updatedAt = OffsetDateTime.now(java.time.ZoneOffset.UTC);
+    message.updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
     messages.saveAndFlush(message);
     audit.record("UPDATE", "contact_messages", id, actor);
     return mapper.toDto(message);

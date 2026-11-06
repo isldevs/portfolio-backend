@@ -5,8 +5,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "admin_users")
-public class AdminUser {
+@Table(name = "users")
+public class User {
   @Id public UUID id = UUID.randomUUID();
 
   @Column(unique = true)
