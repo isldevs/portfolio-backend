@@ -52,15 +52,105 @@ class PortfolioIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(profile.id.toString()))
         .andExpect(jsonPath("$.version").value(profile.version.intValue()))
-        .andExpect(jsonPath("$.fullName").value("Yi Sivlay"))
+        .andExpect(jsonPath("$.full_name").value("Yi Sivlay"))
         .andExpect(jsonPath("$.internalOnly").doesNotExist());
     mvc.perform(get("/api/v1/public/projects").param("size", "0"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.size").value(1))
         .andExpect(jsonPath("$.number").value(0))
-        .andExpect(jsonPath("$.totalElements").isNumber())
-        .andExpect(jsonPath("$.totalPages").isNumber())
+        .andExpect(jsonPath("$.total_elements").isNumber())
+        .andExpect(jsonPath("$.total_pages").isNumber())
         .andExpect(jsonPath("$.content").isArray());
+  }
+
+  @Autowired com.isldevs.portfolio.content.repository.BlogRevisionRepository revisions;
+
+  @Test
+  void snakeCaseRequestsPreserveStoredProfileAndRestoreLegacyRevisions() throws Exception {
+    var profile = profiles.findAll().getFirst();
+    mvc.perform(
+            put("/api/v1/admin/profile")
+                .with(user("naming-test").roles("ADMIN"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(
+                        Map.of(
+                            "version",
+                            profile.version,
+                            "short_bio",
+                            "Snake profile",
+                            "github_url",
+                            "https://github.com/isldevs"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.short_bio").value("Snake profile"))
+        .andExpect(jsonPath("$.shortBio").doesNotExist())
+        .andExpect(jsonPath("$.full_name").value("Yi Sivlay"));
+    assertThat(profiles.findById(profile.id).orElseThrow().data)
+        .containsEntry("shortBio", "Snake profile");
+    var payload = item("Snake article", "snake-article-" + UUID.randomUUID(), "DRAFT");
+    payload.put("display_order", 7);
+    payload.put(
+        "data",
+        Map.of(
+            "cover_image_url",
+            "https://example.com/image.png",
+            "github_url",
+            "https://github.com/isldevs"));
+    JsonNode created =
+        parse(
+            mvc.perform(
+                    post("/api/v1/admin/articles")
+                        .with(user("naming-test").roles("ADMIN"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(payload)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.display_order").value(7))
+                .andExpect(jsonPath("$.displayOrder").doesNotExist())
+                .andExpect(
+                    jsonPath("$.data.cover_image_url").value("https://example.com/image.png"))
+                .andExpect(jsonPath("$.data.coverImageUrl").doesNotExist())
+                .andReturn());
+    var legacy = new com.isldevs.portfolio.content.entity.BlogRevision();
+    legacy.contentId = UUID.fromString(created.get("id").asText());
+    legacy.actor = "legacy-editor";
+    legacy.snapshot = new LinkedHashMap<>(payload);
+    legacy.snapshot.remove("display_order");
+    legacy.snapshot.put("displayOrder", 23);
+    legacy.snapshot.put("data", Map.of("githubUrl", "https://github.com/isldevs"));
+    revisions.saveAndFlush(legacy);
+    mvc.perform(
+            post("/api/v1/admin/articles/"
+                    + legacy.contentId
+                    + "/revisions/"
+                    + legacy.id
+                    + "/restore")
+                .with(user("naming-test").roles("ADMIN"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    json.writeValueAsString(Map.of("version", created.get("version").asLong()))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.display_order").value(23))
+        .andExpect(jsonPath("$.data.github_url").value("https://github.com/isldevs"));
+  }
+
+  @Test
+  void openApiDocumentsTheActualSnakeCaseContracts() throws Exception {
+    JsonNode spec =
+        parse(
+            mvc.perform(get("/api/v1/openapi").with(user("schema-test").roles("ADMIN")))
+                .andExpect(status().isOk())
+                .andReturn());
+    var schemas = spec.path("components").path("schemas");
+    assertThat(schemas.path("CsrfResponse").path("properties").has("header_name")).isTrue();
+    assertThat(schemas.path("ProfileResponse").path("properties").has("full_name")).isTrue();
+    assertThat(schemas.path("ContentResponse").path("properties").has("display_order")).isTrue();
+    assertThat(schemas.path("PasswordChangeRequest").path("properties").has("current_password"))
+        .isTrue();
+    assertThat(schemas.path("PageResponseContentResponse").path("properties").has("total_elements"))
+        .isTrue();
   }
 
   private Map<String, Object> item(String title, String slug, String status) {
@@ -150,7 +240,7 @@ class PortfolioIntegrationTest {
     mvc.perform(
             get("/api/v1/public/projects").param("q", "Unique project").param("technology", "Java"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(1));
+        .andExpect(jsonPath("$.total_elements").value(1));
     mvc.perform(
             delete("/api/v1/admin/projects/" + id)
                 .param("version", published.path("version").asText())
@@ -188,7 +278,7 @@ class PortfolioIntegrationTest {
     assertThat(copy.path("slug").asText()).matches("[a-z0-9]+(?:-[a-z0-9]+)*");
     assertThat(copy.path("slug").asText()).doesNotContain("--").isNotEqualTo(slug);
     assertThat(copy.path("status").asText()).isEqualTo("DRAFT");
-    assertThat(copy.path("publishedAt").isNull()).isTrue();
+    assertThat(copy.path("published_at").isNull()).isTrue();
     assertThat(copy.path("summary").asText()).isEqualTo(original.path("summary").asText());
     mvc.perform(get("/api/v1/public/projects/" + copy.path("slug").asText()))
         .andExpect(status().isNotFound());
@@ -345,9 +435,9 @@ class PortfolioIntegrationTest {
                 .content(
                     json.writeValueAsString(
                         Map.of(
-                            "currentPassword",
+                            "current_password",
                             password,
-                            "newPassword",
+                            "new_password",
                             "New-long-test-password-" + UUID.randomUUID()))))
         .andExpect(status().isNoContent());
     assertThat(session.isInvalid()).isTrue();

@@ -68,33 +68,33 @@ Binary downloads still return `ResponseEntity<Resource>`, and successful delete/
 
 ## Response mapping
 
-| Endpoint family | Response DTO |
-| --- | --- |
-| CSRF | `CsrfResponse` |
-| Login/current administrator | `UserResponse` |
-| Public/admin profile and profile update | `ProfileResponse` |
-| Public/admin content lists | `PageResponse<ContentResponse>` |
-| Content create/update/detail/publish/duplicate/restore | `ContentResponse` |
-| Article revision list | `List<RevisionResponse>` with a `ContentResponse` snapshot |
-| Dashboard | `DashboardResponse` |
-| Audit list | `List<AuditResponse>` |
-| Contact submission | `SubmissionResponse` |
-| Inbox list/detail/update | `PageResponse<MessageResponse>` / `MessageResponse` |
-| Media list/upload | `PageResponse<MediaResponse>` / `MediaResponse` |
+| Endpoint family                                        | Response DTO                                               |
+| ------------------------------------------------------ | ---------------------------------------------------------- |
+| CSRF                                                   | `CsrfResponse`                                             |
+| Login/current administrator                            | `UserResponse`                                             |
+| Public/admin profile and profile update                | `ProfileResponse`                                          |
+| Public/admin content lists                             | `PageResponse<ContentResponse>`                            |
+| Content create/update/detail/publish/duplicate/restore | `ContentResponse`                                          |
+| Article revision list                                  | `List<RevisionResponse>` with a `ContentResponse` snapshot |
+| Dashboard                                              | `DashboardResponse`                                        |
+| Audit list                                             | `List<AuditResponse>`                                      |
+| Contact submission                                     | `SubmissionResponse`                                       |
+| Inbox list/detail/update                               | `PageResponse<MessageResponse>` / `MessageResponse`        |
+| Media list/upload                                      | `PageResponse<MediaResponse>` / `MediaResponse`            |
 
 The page envelope retains the existing JSON shape:
 
 ```json
 {
   "content": [],
-  "totalElements": 0,
-  "totalPages": 0,
+  "total_elements": 0,
+  "total_pages": 0,
   "number": 0,
   "size": 20
 }
 ```
 
-Existing endpoint paths, response field names, version checks, cookie/CSRF behavior, and binary download headers are preserved. Profile responses expose the supported fields explicitly rather than returning every arbitrary key stored in profile JSON.
+Endpoint paths, version checks, cookie/CSRF behavior, and binary download headers are preserved. Request and response JSON property names now use snake_case; older camelCase clients must be updated. Profile responses expose the supported fields explicitly rather than returning every arbitrary key stored in profile JSON.
 
 Rich-text documents and resource-specific metadata remain flexible JSON objects. `ContentResponse.body` and `.data` use Jackson `JsonNode` so a typed response can still represent nested editor documents and varying CMS metadata without changing their JSON layout. Request validation and JSONB persistence may still use internal maps; these are not map-based response envelopes. `ContentRequest` remains separate from the output DTO. The profile update request keeps its existing partial-update map input semantics.
 
@@ -110,3 +110,11 @@ Rich-text documents and resource-specific metadata remain flexible JSON objects.
 6. Export OpenAPI from the running backend, update the [API collection](api-testing.md), and verify affected requests.
 
 This refactor does not add or edit database migrations. Earlier upstream commits changed existing migrations/table names; old installations need a separate reviewed database upgrade plan. Never use Flyway repair, database deletion, or disabling validation as an automatic workaround.
+
+## JSON naming convention
+
+All API DTO properties use `snake_case`, for example `display_order`, `created_at`, `total_elements`, `full_name`, `header_name`, `current_password`, and `new_password`. Java record components and database/storage keys keep their internal naming. CMS metadata inside `data` is converted recursively at the API boundary; send keys such as `cover_image_url` and `github_url`. Profile partial updates also accept the snake_case field names.
+
+The rich-text `body` follows Tiptap's editor document protocol. Node type values and editor attribute keys such as `codeBlock` or `textAlign` are preserved. Enum values, URLs, HTTP header names, and human text are not renamed. Sort values support snake_case field names, for example `sort=created_at,desc`.
+
+DTO records declare `@JsonNaming(SnakeCaseStrategy.class)` so generated OpenAPI also documents the wire names; Spring Jackson is configured with the same default. New DTOs must retain that convention. `ApiJsonNames` handles dynamic metadata and normalizes older article revision snapshots when they are read/restored. No database key migration is needed for this naming change. Deploy the updated frontend and backend together: the older website expects camelCase DTO fields and is incompatible with the new wire contract.

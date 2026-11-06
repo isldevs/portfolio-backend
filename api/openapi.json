@@ -999,16 +999,6 @@
           "auth-controller"
         ],
         "operationId": "csrf",
-        "parameters": [
-          {
-            "name": "token",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/CsrfToken"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -1284,7 +1274,7 @@
           "featured": {
             "type": "boolean"
           },
-          "displayOrder": {
+          "display_order": {
             "type": "integer",
             "format": "int32"
           },
@@ -1292,15 +1282,15 @@
             "type": "integer",
             "format": "int64"
           },
-          "createdAt": {
+          "created_at": {
             "type": "string",
             "format": "date-time"
           },
-          "updatedAt": {
+          "updated_at": {
             "type": "string",
             "format": "date-time"
           },
-          "publishedAt": {
+          "published_at": {
             "type": "string",
             "format": "date-time"
           }
@@ -1341,7 +1331,7 @@
           "featured": {
             "type": "boolean"
           },
-          "displayOrder": {
+          "display_order": {
             "type": "integer",
             "format": "int32"
           },
@@ -1349,15 +1339,15 @@
             "type": "integer",
             "format": "int64"
           },
-          "createdAt": {
+          "created_at": {
             "type": "string",
             "format": "date-time"
           },
-          "updatedAt": {
+          "updated_at": {
             "type": "string",
             "format": "date-time"
           },
-          "publishedAt": {
+          "published_at": {
             "type": "string",
             "format": "date-time"
           }
@@ -1375,19 +1365,19 @@
             "type": "integer",
             "format": "int64"
           },
-          "fullName": {
+          "full_name": {
             "type": "string"
           },
-          "professionalTitle": {
+          "professional_title": {
             "type": "string"
           },
           "headline": {
             "type": "string"
           },
-          "shortBio": {
+          "short_bio": {
             "type": "string"
           },
-          "fullBio": {
+          "full_bio": {
             "type": "string"
           },
           "location": {
@@ -1399,25 +1389,25 @@
           "availability": {
             "type": "string"
           },
-          "githubUrl": {
+          "github_url": {
             "type": "string"
           },
-          "linkedinUrl": {
+          "linkedin_url": {
             "type": "string"
           },
-          "publicEmail": {
+          "public_email": {
             "type": "string"
           },
-          "portraitUrl": {
+          "portrait_url": {
             "type": "string"
           },
-          "resumeUrl": {
+          "resume_url": {
             "type": "string"
           },
-          "seoTitle": {
+          "seo_title": {
             "type": "string"
           },
-          "seoDescription": {
+          "seo_description": {
             "type": "string"
           }
         }
@@ -1477,7 +1467,7 @@
             "type": "integer",
             "format": "int64"
           },
-          "createdAt": {
+          "created_at": {
             "type": "string",
             "format": "date-time"
           }
@@ -1551,10 +1541,10 @@
           "url": {
             "type": "string"
           },
-          "originalName": {
+          "original_name": {
             "type": "string"
           },
-          "contentType": {
+          "content_type": {
             "type": "string"
           },
           "size": {
@@ -1568,7 +1558,7 @@
               "PRIVATE"
             ]
           },
-          "createdAt": {
+          "created_at": {
             "type": "string",
             "format": "date-time"
           }
@@ -1577,18 +1567,18 @@
       "PasswordChangeRequest": {
         "type": "object",
         "properties": {
-          "currentPassword": {
+          "current_password": {
             "type": "string",
             "minLength": 1
           },
-          "newPassword": {
+          "new_password": {
             "type": "string",
             "maxLength": 128,
             "minLength": 14
           }
         },
         "required": [
-          "currentPassword"
+          "current_password"
         ]
       },
       "LoginRequest": {
@@ -1630,11 +1620,11 @@
               "$ref": "#/components/schemas/ContentResponse"
             }
           },
-          "totalElements": {
+          "total_elements": {
             "type": "integer",
             "format": "int64"
           },
-          "totalPages": {
+          "total_pages": {
             "type": "integer",
             "format": "int32"
           },
@@ -1648,27 +1638,13 @@
           }
         }
       },
-      "CsrfToken": {
-        "type": "object",
-        "properties": {
-          "parameterName": {
-            "type": "string"
-          },
-          "token": {
-            "type": "string"
-          },
-          "headerName": {
-            "type": "string"
-          }
-        }
-      },
       "CsrfResponse": {
         "type": "object",
         "properties": {
           "token": {
             "type": "string"
           },
-          "headerName": {
+          "header_name": {
             "type": "string"
           }
         }
@@ -1682,11 +1658,11 @@
               "$ref": "#/components/schemas/MessageResponse"
             }
           },
-          "totalElements": {
+          "total_elements": {
             "type": "integer",
             "format": "int64"
           },
-          "totalPages": {
+          "total_pages": {
             "type": "integer",
             "format": "int32"
           },
@@ -1709,11 +1685,11 @@
               "$ref": "#/components/schemas/MediaResponse"
             }
           },
-          "totalElements": {
+          "total_elements": {
             "type": "integer",
             "format": "int64"
           },
-          "totalPages": {
+          "total_pages": {
             "type": "integer",
             "format": "int32"
           },
@@ -1740,13 +1716,13 @@
           "resource": {
             "type": "string"
           },
-          "resourceId": {
+          "resource_id": {
             "type": "string"
           },
           "actor": {
             "type": "string"
           },
-          "createdAt": {
+          "created_at": {
             "type": "string",
             "format": "date-time"
           }
@@ -1755,31 +1731,31 @@
       "DashboardResponse": {
         "type": "object",
         "properties": {
-          "totalProjects": {
+          "total_projects": {
             "type": "integer",
             "format": "int64"
           },
-          "publishedProjects": {
+          "published_projects": {
             "type": "integer",
             "format": "int64"
           },
-          "totalArticles": {
+          "total_articles": {
             "type": "integer",
             "format": "int64"
           },
-          "publishedArticles": {
+          "published_articles": {
             "type": "integer",
             "format": "int64"
           },
-          "draftArticles": {
+          "draft_articles": {
             "type": "integer",
             "format": "int64"
           },
-          "unreadMessages": {
+          "unread_messages": {
             "type": "integer",
             "format": "int64"
           },
-          "recentActivity": {
+          "recent_activity": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AuditResponse"
@@ -1794,7 +1770,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "createdAt": {
+          "created_at": {
             "type": "string",
             "format": "date-time"
           },

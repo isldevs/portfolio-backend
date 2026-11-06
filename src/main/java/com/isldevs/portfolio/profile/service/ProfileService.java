@@ -54,6 +54,7 @@ public class ProfileService {
   }
 
   public ProfileResponse update(Map<String, Object> input) {
+    input = com.isldevs.portfolio.common.json.ApiJsonNames.toInternal(input);
     Profile p = require();
     Object v = input.get("version");
     if (!(v instanceof Number) || ((Number) v).longValue() != p.version)

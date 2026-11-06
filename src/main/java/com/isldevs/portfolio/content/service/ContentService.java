@@ -83,7 +83,8 @@ public class ContentService {
     kind(kind);
     int boundedSize = Math.clamp(size, 1, 100);
     int boundedPage = Math.clamp(page, 0, 100000);
-    String[] sortParts = (sort == null ? "displayOrder,asc" : sort).split(",");
+    String[] sortParts = (sort == null ? "display_order,asc" : sort).split(",");
+    sortParts[0] = com.isldevs.portfolio.common.json.ApiJsonNames.internal(sortParts[0]);
     String field =
         Set.of("title", "createdAt", "updatedAt", "publishedAt", "displayOrder")
                 .contains(sortParts[0])
@@ -218,10 +219,11 @@ public class ContentService {
   }
 
   private void apply(ContentItem c, ContentRequest in) {
+    var metadata = com.isldevs.portfolio.common.json.ApiJsonNames.toInternal(in.data());
     StructuredContent.validate(in.body());
-    if (in.data() != null && in.data().toString().length() > 1000000)
+    if (metadata != null && metadata.toString().length() > 1000000)
       throw ApiException.invalid("Record metadata is too large.");
-    if (in.data() != null) {
+    if (metadata != null) {
       for (String field :
           List.of(
               "technologies",
@@ -232,8 +234,8 @@ public class ContentService {
               "achievements",
               "services",
               "tools"))
-        if (in.data().containsKey(field)) {
-          Object value = in.data().get(field);
+        if (metadata.containsKey(field)) {
+          Object value = metadata.get(field);
           if (!(value instanceof List<?> list)
               || list.size() > 200
               || list.stream().anyMatch(v -> !(v instanceof String str) || str.length() > 4000))
@@ -271,7 +273,7 @@ public class ContentService {
               "canonicalUrl",
               "seoTitle",
               "seoDescription"))
-        if (in.data().containsKey(field) && !(in.data().get(field) instanceof String))
+        if (metadata.containsKey(field) && !(metadata.get(field) instanceof String))
           throw ApiException.invalid(field + " must be text.");
       for (String field :
           List.of(
@@ -281,7 +283,7 @@ public class ContentService {
               "demoUrl",
               "architectureDiagram",
               "canonicalUrl"))
-        if (in.data().get(field) instanceof String url
+        if (metadata.get(field) instanceof String url
             && !url.isBlank()
             && !StructuredContent.safeUrl(url)) throw ApiException.invalid("Unsafe URL: " + field);
     }
@@ -289,7 +291,7 @@ public class ContentService {
     c.slug = in.slug();
     c.summary = in.summary() == null ? "" : in.summary();
     if (in.body() != null) c.body = new LinkedHashMap<>(in.body());
-    if (in.data() != null) c.data = new LinkedHashMap<>(in.data());
+    if (metadata != null) c.data = new LinkedHashMap<>(metadata);
     c.featured = Boolean.TRUE.equals(in.featured());
     c.displayOrder = in.displayOrder() == null ? 0 : in.displayOrder();
     String next = in.status() == null ? "DRAFT" : in.status();
@@ -360,7 +362,9 @@ public class ContentService {
                     revision.id,
                     revision.createdAt,
                     revision.actor,
-                    mapper.convertValue(revision.snapshot, ContentResponse.class)))
+                    mapper.convertValue(
+                        com.isldevs.portfolio.common.json.ApiJsonNames.toWire(revision.snapshot),
+                        ContentResponse.class)))
         .toList();
   }
 
@@ -369,7 +373,10 @@ public class ContentService {
     check(c, version);
     BlogRevision found =
         revisions.findByIdAndContentId(revisionId, id).orElseThrow(ApiException::notFound);
-    ContentRequest snapshot = mapper.convertValue(found.snapshot, ContentRequest.class);
+    ContentRequest snapshot =
+        mapper.convertValue(
+            com.isldevs.portfolio.common.json.ApiJsonNames.toWire(found.snapshot),
+            ContentRequest.class);
     apply(c, snapshot);
     c.status = "DRAFT";
     repo.saveAndFlush(c);

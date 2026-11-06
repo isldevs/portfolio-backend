@@ -2,6 +2,8 @@ package com.isldevs.portfolio.profile.dto;
 
 import java.util.UUID;
 
+@com.fasterxml.jackson.databind.annotation.JsonNaming(
+    com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record ProfileResponse(
     UUID id,
     Long version,

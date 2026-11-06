@@ -8,6 +8,10 @@ Java 21 / Spring Boot REST API for Yi Sivlay's portfolio and technical-blog CMS.
 - [Postman testing guide](docs/api-testing.md): import the collection/environment, sign in, run checks, and clean up test records.
 - [API testing files](api/README.md): collection, empty environment template, and exported OpenAPI schema.
 
+## API naming compatibility
+
+Request and response JSON uses **snake_case**, including nested CMS metadata. See [the naming convention](docs/package-structure.md#json-naming-convention). Deploy this backend together with the updated `portfolio-web`; the older camelCase frontend is incompatible. Stored database keys and rich-text editor documents are preserved.
+
 ## Manage content
 
 Start this backend, PostgreSQL, and the companion web application, then append `/admin/login` to the website address. Sign in through the website, not the backend's port. The public website footer also has an **Admin login** link.

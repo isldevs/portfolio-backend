@@ -68,7 +68,8 @@ public class AuthController {
   }
 
   @GetMapping("/csrf")
-  public CsrfResponse csrf(CsrfToken token) {
+  public CsrfResponse csrf(
+      @io.swagger.v3.oas.annotations.Parameter(hidden = true) CsrfToken token) {
     return new CsrfResponse(token.getToken(), token.getHeaderName());
   }
 

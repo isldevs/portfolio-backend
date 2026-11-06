@@ -71,7 +71,7 @@ class MediaContactIntegrationTest {
     String id = json.readTree(response).get("id").asText();
     mvc.perform(get("/api/v1/admin/messages").param("q", "Integration test subject"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(1));
+        .andExpect(jsonPath("$.total_elements").value(1));
     mvc.perform(
             put("/api/v1/admin/messages/" + id)
                 .with(csrf())
@@ -161,13 +161,13 @@ class MediaContactIntegrationTest {
     String id = json.readTree(response).get("id").asText();
     mvc.perform(get("/api/v1/admin/messages").param("q", "100%_").param("status", "UNREAD"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.total_elements").value(1))
         .andExpect(jsonPath("$.content[0].name").value("Integration Visitor"))
         .andExpect(jsonPath("$.content[0].email").value("visitor@example.com"))
-        .andExpect(jsonPath("$.content[0].createdAt").isNotEmpty());
+        .andExpect(jsonPath("$.content[0].created_at").isNotEmpty());
     mvc.perform(get("/api/v1/admin/messages").param("q", "101%_"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(0));
+        .andExpect(jsonPath("$.total_elements").value(0));
     for (int version = 0; version < 2; version++) {
       mvc.perform(
               put("/api/v1/admin/messages/" + id)
@@ -179,12 +179,12 @@ class MediaContactIntegrationTest {
     }
     mvc.perform(get("/api/v1/admin/audit"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].resourceId").value(id))
+        .andExpect(jsonPath("$[0].resource_id").value(id))
         .andExpect(jsonPath("$[0].actor").value("mapping-admin"))
-        .andExpect(jsonPath("$[0].createdAt").isNotEmpty());
+        .andExpect(jsonPath("$[0].created_at").isNotEmpty());
     mvc.perform(get("/api/v1/admin/dashboard"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.unreadMessages").value(1));
+        .andExpect(jsonPath("$.unread_messages").value(1));
   }
 
   @Test
@@ -198,10 +198,10 @@ class MediaContactIntegrationTest {
         mvc.perform(multipart("/api/v1/admin/media").file(upload).with(csrf()))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.visibility").value("PUBLIC"))
-            .andExpect(jsonPath("$.originalName").value("mapping-photo.png"))
-            .andExpect(jsonPath("$.contentType").value("image/png"))
-            .andExpect(jsonPath("$.createdAt").isNotEmpty())
-            .andExpect(jsonPath("$.storageKey").doesNotExist())
+            .andExpect(jsonPath("$.original_name").value("mapping-photo.png"))
+            .andExpect(jsonPath("$.content_type").value("image/png"))
+            .andExpect(jsonPath("$.created_at").isNotEmpty())
+            .andExpect(jsonPath("$.storage_key").doesNotExist())
             .andReturn()
             .getResponse()
             .getContentAsString();
@@ -210,10 +210,10 @@ class MediaContactIntegrationTest {
         .isEqualTo("/api/v1/public/media/" + asset.get("id").asText());
     mvc.perform(get("/api/v1/admin/media").param("q", "MAPPING-PHOTO"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(1));
+        .andExpect(jsonPath("$.total_elements").value(1));
     mvc.perform(get("/api/v1/admin/media").param("q", "%"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalElements").value(0));
+        .andExpect(jsonPath("$.total_elements").value(0));
     mvc.perform(get(asset.get("url").asText()))
         .andExpect(status().isOk())
         .andExpect(content().bytes(image.toByteArray()));

@@ -27,9 +27,9 @@ interface ContentItem {
   title: string;
   slug: string;
   summary: string;
-  body: { type: 'doc'; content?: unknown[] }; // validated Tiptap document
+  body: { type: "doc"; content?: unknown[] }; // validated Tiptap document
   data: Record<string, unknown>;
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   featured: boolean;
   displayOrder: number;
   version: number;
@@ -62,4 +62,4 @@ The generated OpenAPI schema from the running backend is authoritative for exact
 
 All application persistence uses Spring Data JPA repositories. Content, profiles and administrator accounts retain their existing entities; messages, media metadata, blog revisions and audit logs also have JPA entities. Flyway owns the schema and Hibernate validates it. PostgreSQL JSON reference checks remain native queries declared on the content repository.
 
-MapStruct 1.6.3 generates Spring mapper beans for content, contact messages, media and audit responses during Java compilation. Mappers use `ReportingPolicy.ERROR` so new response fields must be mapped deliberately. Services retain validation and lifecycle rules; client DTOs never overwrite entity identity, optimistic-lock versions or timestamps. Contact message updates use JPA `@Version`; media filesystem cleanup still runs after transaction completion. Existing API paths and response fields are preserved.
+MapStruct 1.6.3 generates Spring mapper beans for content, contact messages, media and audit responses during Java compilation. Mappers use `ReportingPolicy.ERROR` so new response fields must be mapped deliberately. Services retain validation and lifecycle rules; client DTOs never overwrite entity identity, optimistic-lock versions or timestamps. Contact message updates use JPA `@Version`; media filesystem cleanup still runs after transaction completion. API paths are preserved. Request and response JSON now uses snake_case; see [the naming convention](package-structure.md#json-naming-convention).

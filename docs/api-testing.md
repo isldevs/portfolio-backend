@@ -26,16 +26,16 @@ The default address is `http://127.0.0.1:8080`. This means the backend is on you
 4. Set the values in the table below.
 5. Select that environment in Postman's environment selector before sending requests.
 
-| Variable | What to enter |
-| --- | --- |
-| `baseUrl` | Backend origin, for example `http://127.0.0.1:8080`, without a trailing slash or `/api/v1` suffix |
-| `username` | Your test administrator username |
-| `password` | Its password, entered privately |
-| `allowWrites` | Leave `false` for the first run |
-| `allowProfileUpdate` | Leave `false` unless intentionally testing profile saving |
-| `allowPasswordChange` | Leave `false`; password changes should be tested individually |
-| `newPassword` | Leave empty unless intentionally testing password change |
-| `mediaFile` | Leave empty unless testing upload; see below |
+| Variable              | What to enter                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| `baseUrl`             | Backend origin, for example `http://127.0.0.1:8080`, without a trailing slash or `/api/v1` suffix |
+| `username`            | Your test administrator username                                                                  |
+| `password`            | Its password, entered privately                                                                   |
+| `allowWrites`         | Leave `false` for the first run                                                                   |
+| `allowProfileUpdate`  | Leave `false` unless intentionally testing profile saving                                         |
+| `allowPasswordChange` | Leave `false`; password changes should be tested individually                                     |
+| `new_password`        | Leave empty unless intentionally testing password change                                          |
+| `mediaFile`           | Leave empty unless testing upload; see below                                                      |
 
 Environment values override collection variables with the same name. Change the value in the **selected environment**, not just the collection, when enabling a test.
 
@@ -74,39 +74,39 @@ With `allowWrites=true`, the optional requests upload a PUBLIC test asset, downl
 
 ### Optional password test
 
-Run **Change password** individually, after other checks. It requires `allowWrites=true`, `allowPasswordChange=true`, the correct existing `password`, and a chosen `newPassword` of at least 14 characters and at most 72 UTF-8 bytes.
+Run **Change password** individually, after other checks. It requires `allowWrites=true`, `allowPasswordChange=true`, the correct existing `password`, and a chosen `new_password` of at least 14 characters and at most 72 UTF-8 bytes.
 
 This changes the actual test account password and ends its sessions. Update your local `password` value and sign in again afterward. Leave this request disabled in normal collection runs; otherwise later authenticated requests may fail after the password change.
 
 ## What each folder tests
 
-| Folder | Purpose |
-| --- | --- |
-| 01 Public API | Health, CSRF response, public profile, and published lists for all eight content kinds |
-| 02 Session | Anonymous access rejection, login, and current administrator DTO |
-| 03 Administrator reads | Dashboard, audit, all content lists, profile, inbox, and media pagination |
-| 04 Content lifecycle | Create draft, read, verify draft privacy, update, publish, public detail, reject stale version, duplicate, unpublish, delete |
-| 05 Article revisions | Create article, list typed revision snapshots, restore as draft, delete test article |
-| 06 Contact inbox lifecycle | Submit message, read it, mark it read with version checking, delete it |
-| 07 Optional manual operations | Profile saving, file upload/download/delete, and opt-in password change |
-| 08 End session | Logout and rejection of access after logout |
+| Folder                        | Purpose                                                                                                                      |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 01 Public API                 | Health, CSRF response, public profile, and published lists for all eight content kinds                                       |
+| 02 Session                    | Anonymous access rejection, login, and current administrator DTO                                                             |
+| 03 Administrator reads        | Dashboard, audit, all content lists, profile, inbox, and media pagination                                                    |
+| 04 Content lifecycle          | Create draft, read, verify draft privacy, update, publish, public detail, reject stale version, duplicate, unpublish, delete |
+| 05 Article revisions          | Create article, list typed revision snapshots, restore as draft, delete test article                                         |
+| 06 Contact inbox lifecycle    | Submit message, read it, mark it read with version checking, delete it                                                       |
+| 07 Optional manual operations | Profile saving, file upload/download/delete, and opt-in password change                                                      |
+| 08 End session                | Logout and rejection of access after logout                                                                                  |
 
 Health and OpenAPI are intentionally private in the documented production proxy setup. A blocked health request through a public production origin does not prove the backend is broken; use the local test origin.
 
 ## Common results explained
 
-| Result | Meaning / next step |
-| --- | --- |
-| 200 | Request succeeded and returned data |
-| 201 | A record/file/message was created |
-| 204 | Succeeded with no response body; do not try to parse JSON |
-| 400 | Check required fields, slug, file format/size, or request values |
-| 401 | Login is required, credentials are incorrect, or the session ended |
-| 403 | Check session cookies, CSRF handling, and whether the same backend address is used throughout |
-| 404 | Record missing/unpublished, wrong slug/ID, or private file accessed publicly; some negative tests expect this |
-| 409 | Version conflict, duplicate slug, or referenced record/file; read the latest record before retrying |
-| 429 | Too many requests/login attempts; observe `Retry-After` when provided and stop repeating the request |
-| Cannot connect / 502 / 503 | Check backend, PostgreSQL, port, proxy, and test address |
+| Result                     | Meaning / next step                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 200                        | Request succeeded and returned data                                                                           |
+| 201                        | A record/file/message was created                                                                             |
+| 204                        | Succeeded with no response body; do not try to parse JSON                                                     |
+| 400                        | Check required fields, slug, file format/size, or request values                                              |
+| 401                        | Login is required, credentials are incorrect, or the session ended                                            |
+| 403                        | Check session cookies, CSRF handling, and whether the same backend address is used throughout                 |
+| 404                        | Record missing/unpublished, wrong slug/ID, or private file accessed publicly; some negative tests expect this |
+| 409                        | Version conflict, duplicate slug, or referenced record/file; read the latest record before retrying           |
+| 429                        | Too many requests/login attempts; observe `Retry-After` when provided and stop repeating the request          |
+| Cannot connect / 502 / 503 | Check backend, PostgreSQL, port, proxy, and test address                                                      |
 
 If a run stops halfway, test records may remain. Use their captured IDs and version values in the cleanup requests, or remove only the known test records through the admin screen. Slugs start with `api-check-` or `api-article-`; review records before deleting anything. Never use a broad delete query against a live database.
 
@@ -122,10 +122,16 @@ Install Newman using your normal approved tooling. Keep its reports and populate
 
 ## Validation performed for this change
 
-- 25 backend tests passed, including response-contract and profile-field filtering checks.
+- 29 backend tests passed, including response-contract and profile-field filtering checks.
 - JAR build and Spotless formatting checks passed.
-- Collection run on a disposable local backend: 80 assertions passed; password change was intentionally skipped. Profile-save and public-media upload/download/delete were exercised.
-- Default read-only collection run: 53 assertions passed.
+- Collection run on a disposable local backend: 125 assertions passed; password change was intentionally skipped. Profile-save and public-media upload/download/delete were exercised.
+- Default read-only collection run: 81 assertions passed.
 - OpenAPI was exported from the running refactored backend with typed response schemas.
 
 These results describe the local validation run, not a production deployment or an existing database upgrade.
+
+## Request and response names
+
+JSON API fields use snake_case: `header_name` in the CSRF response, `current_password`/`new_password` for password changes, `full_name`/`short_bio` in profiles, `display_order`/`created_at` in content, and `total_elements`/`total_pages` in list responses. CMS metadata also uses snake_case, such as `cover_image_url`. The collection checks response property names automatically.
+
+Keep the editor document format inside `body` unchanged. Its type names and attributes are part of the editor protocol. Postman's own collection format and control-variable names such as `baseUrl`/`allowWrites` are not API JSON fields.

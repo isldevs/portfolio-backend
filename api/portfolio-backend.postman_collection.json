@@ -34,7 +34,7 @@
       "value": ""
     },
     {
-      "key": "newPassword",
+      "key": "new_password",
       "value": ""
     },
     {
@@ -111,8 +111,27 @@
           "  pm.sendRequest({url: pm.variables.get('baseUrl') + '/api/v1/csrf', method: 'GET'}, (error, response) => {",
           "    if (error || response.code !== 200) throw new Error('Unable to obtain CSRF token; request aborted.');",
           "    const csrf = response.json();",
-          "    pm.request.headers.upsert({key: csrf.headerName, value: csrf.token});",
+          "    pm.request.headers.upsert({key: csrf.header_name, value: csrf.token});",
           "  });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if ((pm.response.headers.get('Content-Type') || '').includes('json')) {",
+          "  const check = (value) => {",
+          "    if (Array.isArray(value)) return value.forEach(check);",
+          "    if (!value || typeof value !== 'object') return;",
+          "    Object.entries(value).forEach(([key, item]) => {",
+          "      pm.expect(key, 'API JSON field').not.to.match(/[A-Z]/);",
+          "      if (key !== 'body') check(item); // Editor document protocol is intentionally preserved.",
+          "    });",
+          "  };",
+          "  pm.test('JSON properties use snake_case', () => check(pm.response.json()));",
           "}"
         ]
       }
@@ -158,7 +177,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const csrf=pm.response.json(); pm.test('CSRF DTO',()=>{ pm.expect(csrf.token).to.be.a('string'); pm.expect(csrf.headerName).to.be.a('string'); });"
+                  "const csrf=pm.response.json(); pm.test('CSRF DTO',()=>{ pm.expect(csrf.token).to.be.a('string'); pm.expect(csrf.header_name).to.be.a('string'); });"
                 ]
               }
             }
@@ -200,7 +219,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -221,7 +240,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -242,7 +261,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -263,7 +282,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -284,7 +303,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -305,7 +324,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -326,7 +345,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -347,7 +366,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -453,7 +472,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Dashboard DTO',()=>{ const data=pm.response.json(); pm.expect(data.recentActivity).to.be.an('array'); ['totalProjects','publishedProjects','totalArticles','publishedArticles','draftArticles','unreadMessages'].forEach(key=>pm.expect(data[key]).to.be.a('number')); });"
+                  "pm.test('Dashboard DTO',()=>{ const data=pm.response.json(); pm.expect(data.recent_activity).to.be.an('array'); ['total_projects','published_projects','total_articles','published_articles','draft_articles','unread_messages'].forEach(key=>pm.expect(data[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -495,7 +514,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -516,7 +535,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -537,7 +556,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -558,7 +577,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -579,7 +598,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -600,7 +619,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -621,7 +640,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -642,7 +661,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -684,7 +703,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -705,7 +724,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['total_elements','total_pages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
                 ]
               }
             }
@@ -730,7 +749,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"API collection test\",\n  \"slug\": \"{{slug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"displayOrder\": 999\n}",
+              "raw": "{\n  \"title\": \"API collection test\",\n  \"slug\": \"{{slug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"display_order\": 999\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -833,7 +852,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"API collection test updated\",\n  \"slug\": \"{{slug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"displayOrder\": 999,\n  \"version\": {{contentVersion}}\n}",
+              "raw": "{\n  \"title\": \"API collection test updated\",\n  \"slug\": \"{{slug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"display_order\": 999,\n  \"version\": {{contentVersion}}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -933,7 +952,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"API collection test\",\n  \"slug\": \"{{slug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"displayOrder\": 999,\n  \"version\": -1\n}",
+              "raw": "{\n  \"title\": \"API collection test\",\n  \"slug\": \"{{slug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"display_order\": 999,\n  \"version\": -1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1068,7 +1087,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"API collection test\",\n  \"slug\": \"{{articleSlug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"displayOrder\": 999\n}",
+              "raw": "{\n  \"title\": \"API collection test\",\n  \"slug\": \"{{articleSlug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"display_order\": 999\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1497,7 +1516,7 @@
             "description": "Requires allowWrites=true and allowPasswordChange=true. Changes the actual test account password and ends sessions; leave disabled in the normal runner.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"currentPassword\": \"{{password}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+              "raw": "{\n  \"current_password\": \"{{password}}\",\n  \"new_password\": \"{{new_password}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

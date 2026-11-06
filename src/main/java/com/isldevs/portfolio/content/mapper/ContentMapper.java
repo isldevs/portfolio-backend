@@ -14,9 +14,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 public abstract class ContentMapper {
   @Autowired protected ObjectMapper objectMapper;
 
+  @Named("document")
   public JsonNode json(Map<String, Object> value) {
     return objectMapper.valueToTree(value);
   }
 
+  public JsonNode wireData(Map<String, Object> value) {
+    return objectMapper.valueToTree(com.isldevs.portfolio.common.json.ApiJsonNames.toWire(value));
+  }
+
+  @Mapping(target = "body", qualifiedByName = "document")
+  @Mapping(target = "data", expression = "java(wireData(item.data))")
   public abstract ContentResponse toDto(ContentItem item);
 }
