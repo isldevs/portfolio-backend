@@ -8,6 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.*;
 import com.isldevs.portfolio.auth.entity.User;
 import com.isldevs.portfolio.auth.repository.UserRepository;
+import com.isldevs.portfolio.content.entity.BlogRevision;
+import com.isldevs.portfolio.content.repository.BlogRevisionRepository;
+import com.isldevs.portfolio.profile.repository.ProfileRepository;
 import java.util.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +44,7 @@ class PortfolioIntegrationTest {
   @Autowired UserRepository users;
   @Autowired PasswordEncoder encoder;
 
-  @Autowired com.isldevs.portfolio.profile.repository.ProfileRepository profiles;
+  @Autowired ProfileRepository profiles;
 
   @Test
   void profileResponseUsesExplicitFieldsAndDoesNotLeakStorageMetadata() throws Exception {
@@ -63,7 +66,7 @@ class PortfolioIntegrationTest {
         .andExpect(jsonPath("$.content").isArray());
   }
 
-  @Autowired com.isldevs.portfolio.content.repository.BlogRevisionRepository revisions;
+  @Autowired BlogRevisionRepository revisions;
 
   @Test
   void snakeCaseRequestsPreserveStoredProfileAndRestoreLegacyRevisions() throws Exception {
@@ -112,7 +115,7 @@ class PortfolioIntegrationTest {
                     jsonPath("$.data.cover_image_url").value("https://example.com/image.png"))
                 .andExpect(jsonPath("$.data.coverImageUrl").doesNotExist())
                 .andReturn());
-    var legacy = new com.isldevs.portfolio.content.entity.BlogRevision();
+    var legacy = new BlogRevision();
     legacy.contentId = UUID.fromString(created.get("id").asText());
     legacy.actor = "legacy-editor";
     legacy.snapshot = new LinkedHashMap<>(payload);
@@ -146,11 +149,22 @@ class PortfolioIntegrationTest {
     var schemas = spec.path("components").path("schemas");
     assertThat(schemas.path("CsrfResponse").path("properties").has("header_name")).isTrue();
     assertThat(schemas.path("ProfileResponse").path("properties").has("full_name")).isTrue();
+    assertThat(schemas.path("ProfileResponse").path("type").asText()).isEqualTo("object");
     assertThat(schemas.path("ContentResponse").path("properties").has("display_order")).isTrue();
     assertThat(schemas.path("PasswordChangeRequest").path("properties").has("current_password"))
         .isTrue();
     assertThat(schemas.path("PageResponseContentResponse").path("properties").has("total_elements"))
         .isTrue();
+  }
+
+  private record UnannotatedPayload(String fieldName) {}
+
+  @Test
+  void globalNamingAppliesToNewTypesWithoutAnnotations() throws Exception {
+    assertThat(json.writeValueAsString(new UnannotatedPayload("value")))
+        .isEqualTo("{\"field_name\":\"value\"}");
+    assertThat(json.readValue("{\"field_name\":\"value\"}", UnannotatedPayload.class).fieldName())
+        .isEqualTo("value");
   }
 
   private Map<String, Object> item(String title, String slug, String status) {

@@ -5,10 +5,12 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.isldevs.portfolio.common.exception.CustomExceptionHandler;
 import com.isldevs.portfolio.contact.controller.ContactController;
 import com.isldevs.portfolio.contact.service.ContactRateLimiter;
 import com.isldevs.portfolio.contact.service.ContactService;
+import jakarta.persistence.Entity;
 import java.lang.reflect.*;
 import java.util.*;
 import org.junit.jupiter.api.Test;
@@ -43,12 +45,16 @@ class ResponseContractTest {
       for (Type argument : parameterized.getActualTypeArguments()) assertTyped(argument, visited);
     } else if (type instanceof Class<?> clazz) {
       assertThat(Map.class.isAssignableFrom(clazz)).as("Response type %s", clazz).isFalse();
-      assertThat(clazz.isAnnotationPresent(jakarta.persistence.Entity.class))
+      assertThat(clazz.isAnnotationPresent(Entity.class))
           .as("JPA entity in response: %s", clazz)
           .isFalse();
-      if (clazz.isRecord() && clazz.getPackageName().startsWith("com.isldevs.portfolio"))
+      if (clazz.isRecord() && clazz.getPackageName().startsWith("com.isldevs.portfolio")) {
+        assertThat(clazz.isAnnotationPresent(JsonNaming.class))
+            .as("DTO naming must be global")
+            .isFalse();
         for (var component : clazz.getRecordComponents())
           assertTyped(component.getGenericType(), visited);
+      }
     }
   }
 

@@ -9,9 +9,12 @@ import com.isldevs.portfolio.auth.entity.User;
 import com.isldevs.portfolio.auth.repository.UserRepository;
 import com.isldevs.portfolio.auth.service.Attempt;
 import com.isldevs.portfolio.common.exception.ApiException;
+import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Locale;
 import org.springframework.http.HttpStatus;
@@ -21,6 +24,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -68,8 +72,7 @@ public class AuthController {
   }
 
   @GetMapping("/csrf")
-  public CsrfResponse csrf(
-      @io.swagger.v3.oas.annotations.Parameter(hidden = true) CsrfToken token) {
+  public CsrfResponse csrf(@Parameter(hidden = true) CsrfToken token) {
     return new CsrfResponse(token.getToken(), token.getHeaderName());
   }
 
@@ -78,7 +81,7 @@ public class AuthController {
       @Valid @RequestBody LoginRequest login,
       HttpServletRequest request,
       HttpServletResponse response) {
-    if (login.password().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72)
+    if (login.password().getBytes(StandardCharsets.UTF_8).length > 72)
       throw ApiException.invalid("Password exceeds the supported length.");
     String account = "account:" + login.username().toLowerCase(Locale.ROOT);
     String key = account + "|" + request.getRemoteAddr();
@@ -129,7 +132,7 @@ public class AuthController {
     if (session != null) session.invalidate();
     SecurityContextHolder.clearContext();
     csrfRepository.saveToken(null, req, res);
-    var cookie = new jakarta.servlet.http.Cookie("PORTFOLIO_SESSION", "");
+    var cookie = new Cookie("PORTFOLIO_SESSION", "");
     cookie.setPath("/");
     cookie.setHttpOnly(true);
     cookie.setMaxAge(0);
@@ -147,16 +150,14 @@ public class AuthController {
     if (!encoder.matches(input.currentPassword(), user.passwordHash))
       throw new ApiException(HttpStatus.UNAUTHORIZED, "Current password is incorrect.");
     if (input.newPassword() == null
-        || input.newPassword().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72)
+        || input.newPassword().getBytes(StandardCharsets.UTF_8).length > 72)
       throw ApiException.invalid(
           "New password requires at least 14 characters and at most 72 UTF-8 bytes.");
     user.passwordHash = encoder.encode(input.newPassword());
     user.updatedAt = Instant.now();
     users.save(user);
     audit.record("PASSWORD_CHANGE", "admin", user.id);
-    sessions
-        .getAllSessions(auth.getPrincipal(), false)
-        .forEach(org.springframework.security.core.session.SessionInformation::expireNow);
+    sessions.getAllSessions(auth.getPrincipal(), false).forEach(SessionInformation::expireNow);
     req.getSession().invalidate();
     SecurityContextHolder.clearContext();
   }

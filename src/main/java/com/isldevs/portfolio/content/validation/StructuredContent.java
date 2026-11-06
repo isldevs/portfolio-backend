@@ -1,6 +1,8 @@
 package com.isldevs.portfolio.content.validation;
 
 import com.isldevs.portfolio.common.exception.ApiException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 
 /** Validate the editor document; public rendering never executes HTML, MDX, or scripts. */
@@ -88,7 +90,7 @@ public final class StructuredContent {
     if (url == null || url.contains("\\") || url.chars().anyMatch(c -> c < 32 || c == 127))
       return false;
     try {
-      var uri = new java.net.URI(url);
+      var uri = new URI(url);
       if (url.startsWith("/")) {
         return uri.getAuthority() == null
             && (url.equals("/images/yi-sivlay.png")
@@ -98,7 +100,7 @@ public final class StructuredContent {
         return uri.getHost() != null && uri.getUserInfo() == null;
       return "mailto".equalsIgnoreCase(uri.getScheme())
           && uri.getSchemeSpecificPart().matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+");
-    } catch (java.net.URISyntaxException e) {
+    } catch (URISyntaxException e) {
       return false;
     }
   }

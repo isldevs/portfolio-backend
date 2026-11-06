@@ -11,6 +11,7 @@ import com.isldevs.portfolio.media.repository.MediaAssetRepository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,8 +104,7 @@ public class MediaService {
             + "%";
     Specification<Media> spec =
         (root, query, cb) ->
-            cb.like(
-                cb.lower(root.get("originalName")), term.toLowerCase(java.util.Locale.ROOT), '\\');
+            cb.like(cb.lower(root.get("originalName")), term.toLowerCase(Locale.ROOT), '\\');
     var result =
         assets.findAll(
             spec,

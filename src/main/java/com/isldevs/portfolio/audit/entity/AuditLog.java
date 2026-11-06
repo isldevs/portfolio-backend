@@ -1,6 +1,7 @@
 package com.isldevs.portfolio.audit.entity;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -11,5 +12,5 @@ public class AuditLog {
   public String resource;
   public String resourceId;
   public String actor;
-  public java.time.Instant createdAt = java.time.Instant.now();
+  public Instant createdAt = Instant.now();
 }

@@ -1,6 +1,7 @@
 package com.isldevs.portfolio.contact.controller;
 
 import com.isldevs.portfolio.common.dto.PageResponse;
+import com.isldevs.portfolio.common.exception.RateLimitException;
 import com.isldevs.portfolio.contact.dto.ContactRequest;
 import com.isldevs.portfolio.contact.dto.MessageResponse;
 import com.isldevs.portfolio.contact.dto.MessageUpdateRequest;
@@ -33,8 +34,7 @@ public class ContactController {
   public ResponseEntity<SubmissionResponse> submit(
       @Valid @RequestBody ContactRequest form, HttpServletRequest request) {
     // getRemoteAddr comes from the container. Raw X-Forwarded-For is deliberately ignored here.
-    if (!limiter.allow(request.getRemoteAddr()))
-      throw new com.isldevs.portfolio.common.exception.RateLimitException();
+    if (!limiter.allow(request.getRemoteAddr())) throw new RateLimitException();
     if (form.website() != null && !form.website().isBlank())
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "Contact submission could not be accepted");

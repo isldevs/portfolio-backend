@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.isldevs.portfolio.audit.service.AuditService;
 import com.isldevs.portfolio.common.dto.PageResponse;
 import com.isldevs.portfolio.common.exception.ApiException;
+import com.isldevs.portfolio.common.json.ApiJsonNames;
 import com.isldevs.portfolio.content.dto.ContentRequest;
 import com.isldevs.portfolio.content.dto.ContentResponse;
 import com.isldevs.portfolio.content.dto.RevisionResponse;
@@ -27,6 +28,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,7 +86,7 @@ public class ContentService {
     int boundedSize = Math.clamp(size, 1, 100);
     int boundedPage = Math.clamp(page, 0, 100000);
     String[] sortParts = (sort == null ? "display_order,asc" : sort).split(",");
-    sortParts[0] = com.isldevs.portfolio.common.json.ApiJsonNames.internal(sortParts[0]);
+    sortParts[0] = ApiJsonNames.internal(sortParts[0]);
     String field =
         Set.of("title", "createdAt", "updatedAt", "publishedAt", "displayOrder")
                 .contains(sortParts[0])
@@ -219,7 +221,7 @@ public class ContentService {
   }
 
   private void apply(ContentItem c, ContentRequest in) {
-    var metadata = com.isldevs.portfolio.common.json.ApiJsonNames.toInternal(in.data());
+    var metadata = ApiJsonNames.toInternal(in.data());
     StructuredContent.validate(in.body());
     if (metadata != null && metadata.toString().length() > 1000000)
       throw ApiException.invalid("Record metadata is too large.");
@@ -346,9 +348,7 @@ public class ContentService {
   }
 
   private String actor() {
-    var a =
-        org.springframework.security.core.context.SecurityContextHolder.getContext()
-            .getAuthentication();
+    var a = SecurityContextHolder.getContext().getAuthentication();
     return a == null ? "system" : a.getName();
   }
 
@@ -363,8 +363,7 @@ public class ContentService {
                     revision.createdAt,
                     revision.actor,
                     mapper.convertValue(
-                        com.isldevs.portfolio.common.json.ApiJsonNames.toWire(revision.snapshot),
-                        ContentResponse.class)))
+                        ApiJsonNames.toWire(revision.snapshot), ContentResponse.class)))
         .toList();
   }
 
@@ -374,9 +373,7 @@ public class ContentService {
     BlogRevision found =
         revisions.findByIdAndContentId(revisionId, id).orElseThrow(ApiException::notFound);
     ContentRequest snapshot =
-        mapper.convertValue(
-            com.isldevs.portfolio.common.json.ApiJsonNames.toWire(found.snapshot),
-            ContentRequest.class);
+        mapper.convertValue(ApiJsonNames.toWire(found.snapshot), ContentRequest.class);
     apply(c, snapshot);
     c.status = "DRAFT";
     repo.saveAndFlush(c);

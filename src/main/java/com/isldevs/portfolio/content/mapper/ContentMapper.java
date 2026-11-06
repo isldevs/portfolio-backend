@@ -2,6 +2,7 @@ package com.isldevs.portfolio.content.mapper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.isldevs.portfolio.common.json.ApiJsonNames;
 import com.isldevs.portfolio.content.dto.ContentResponse;
 import com.isldevs.portfolio.content.entity.ContentItem;
 import java.util.Map;
@@ -20,7 +21,7 @@ public abstract class ContentMapper {
   }
 
   public JsonNode wireData(Map<String, Object> value) {
-    return objectMapper.valueToTree(com.isldevs.portfolio.common.json.ApiJsonNames.toWire(value));
+    return objectMapper.valueToTree(ApiJsonNames.toWire(value));
   }
 
   @Mapping(target = "body", qualifiedByName = "document")

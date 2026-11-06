@@ -3,20 +3,33 @@ package com.isldevs.portfolio.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.isldevs.portfolio.auth.repository.UserRepository;
 import jakarta.servlet.http.*;
+import java.io.IOException;
+import java.util.List;
 import org.springframework.context.annotation.*;
 import org.springframework.http.*;
 import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.annotation.web.configurers.RequestCacheConfigurer;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.*;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.RegisterSessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.*;
 import org.springframework.security.web.csrf.*;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @Configuration
 public class SecurityConfig {
@@ -29,18 +42,13 @@ public class SecurityConfig {
   UserDetailsService users(UserRepository repo) {
     return username ->
         repo.findByUsername(username)
-            .map(
-                u ->
-                    org.springframework.security.core.userdetails.User.withUsername(u.username)
-                        .password(u.passwordHash)
-                        .roles("ADMIN")
-                        .build())
+            .map(u -> User.withUsername(u.username).password(u.passwordHash).roles("ADMIN").build())
             .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
   }
 
   @Bean
   AuthenticationManager authenticationManager(UserDetailsService users, PasswordEncoder encoder) {
-    var p = new org.springframework.security.authentication.dao.DaoAuthenticationProvider(users);
+    var p = new DaoAuthenticationProvider(users);
     p.setPasswordEncoder(encoder);
     return new ProviderManager(p);
   }
@@ -51,13 +59,13 @@ public class SecurityConfig {
   }
 
   @Bean
-  org.springframework.security.core.session.SessionRegistry sessionRegistry() {
-    return new org.springframework.security.core.session.SessionRegistryImpl();
+  SessionRegistry sessionRegistry() {
+    return new SessionRegistryImpl();
   }
 
   @Bean
-  org.springframework.security.web.session.HttpSessionEventPublisher sessionEventPublisher() {
-    return new org.springframework.security.web.session.HttpSessionEventPublisher();
+  HttpSessionEventPublisher sessionEventPublisher() {
+    return new HttpSessionEventPublisher();
   }
 
   @Bean
@@ -69,22 +77,15 @@ public class SecurityConfig {
   }
 
   @Bean
-  org.springframework.security.web.authentication.session.SessionAuthenticationStrategy
-      loginStrategy(
-          org.springframework.security.core.session.SessionRegistry registry,
-          CookieCsrfTokenRepository csrf) {
-    var concurrent =
-        new org.springframework.security.web.authentication.session
-            .ConcurrentSessionControlAuthenticationStrategy(registry);
+  SessionAuthenticationStrategy loginStrategy(
+      SessionRegistry registry, CookieCsrfTokenRepository csrf) {
+    var concurrent = new ConcurrentSessionControlAuthenticationStrategy(registry);
     concurrent.setMaximumSessions(5);
-    return new org.springframework.security.web.authentication.session
-        .CompositeSessionAuthenticationStrategy(
-        java.util.List.of(
+    return new CompositeSessionAuthenticationStrategy(
+        List.of(
             concurrent,
-            new org.springframework.security.web.authentication.session
-                .ChangeSessionIdAuthenticationStrategy(),
-            new org.springframework.security.web.authentication.session
-                .RegisterSessionAuthenticationStrategy(registry),
+            new ChangeSessionIdAuthenticationStrategy(),
+            new RegisterSessionAuthenticationStrategy(registry),
             new CsrfAuthenticationStrategy(csrf)));
   }
 
@@ -94,7 +95,7 @@ public class SecurityConfig {
       ObjectMapper mapper,
       SecurityContextRepository contexts,
       CookieCsrfTokenRepository csrf,
-      org.springframework.security.core.session.SessionRegistry registry)
+      SessionRegistry registry)
       throws Exception {
     var handler = new CsrfTokenRequestAttributeHandler();
     http.csrf(c -> c.csrfTokenRepository(csrf).csrfTokenRequestHandler(handler))
@@ -142,16 +143,12 @@ public class SecurityConfig {
             h ->
                 h.contentTypeOptions(c -> {})
                     .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
-                    .referrerPolicy(
-                        r ->
-                            r.policy(
-                                org.springframework.security.web.header.writers
-                                    .ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN)));
+                    .referrerPolicy(r -> r.policy(ReferrerPolicy.SAME_ORIGIN)));
     return http.build();
   }
 
   private void problem(HttpServletResponse res, int status, String detail, ObjectMapper mapper)
-      throws java.io.IOException {
+      throws IOException {
     res.setStatus(status);
     res.setContentType("application/problem+json");
     mapper.writeValue(

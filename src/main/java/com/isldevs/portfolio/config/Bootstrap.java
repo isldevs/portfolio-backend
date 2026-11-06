@@ -6,6 +6,8 @@ import com.isldevs.portfolio.content.entity.ContentItem;
 import com.isldevs.portfolio.content.repository.ContentRepository;
 import com.isldevs.portfolio.profile.entity.Profile;
 import com.isldevs.portfolio.profile.repository.ProfileRepository;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -50,7 +52,7 @@ public class Bootstrap implements CommandLineRunner {
     if (users.count() == 0 && (!username.isBlank() || !password.isBlank())) {
       if (username.isBlank()
           || password.length() < 14
-          || password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72)
+          || password.getBytes(StandardCharsets.UTF_8).length > 72)
         throw new IllegalStateException(
             "Bootstrap requires ADMIN_USERNAME and an ADMIN_PASSWORD of at least 14 characters and"
                 + " no more than 72 UTF-8 bytes.");
@@ -526,7 +528,7 @@ public class Bootstrap implements CommandLineRunner {
     c.displayOrder = order;
     c.data = new LinkedHashMap<>(data);
     c.body = new LinkedHashMap<>(Map.of("type", "doc", "content", nodes));
-    c.publishedAt = java.time.Instant.now();
+    c.publishedAt = Instant.now();
     return c;
   }
 

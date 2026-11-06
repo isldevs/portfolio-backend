@@ -7,8 +7,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-@com.fasterxml.jackson.databind.annotation.JsonNaming(
-    com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record ContentRequest(
     UUID id,
     String kind,

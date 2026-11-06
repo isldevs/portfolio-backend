@@ -1,6 +1,6 @@
 package com.isldevs.portfolio.common.json;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.isldevs.portfolio.config.JacksonConfiguration;
 import java.util.*;
 import java.util.function.UnaryOperator;
 
@@ -9,7 +9,7 @@ public final class ApiJsonNames {
   private ApiJsonNames() {}
 
   public static String snake(String name) {
-    return PropertyNamingStrategies.SnakeCaseStrategy.INSTANCE.translate(name);
+    return JacksonConfiguration.API_NAMING.translate(name);
   }
 
   public static String internal(String name) {

@@ -2,6 +2,7 @@ package com.isldevs.portfolio.profile.service;
 
 import com.isldevs.portfolio.audit.service.AuditService;
 import com.isldevs.portfolio.common.exception.ApiException;
+import com.isldevs.portfolio.common.json.ApiJsonNames;
 import com.isldevs.portfolio.content.validation.StructuredContent;
 import com.isldevs.portfolio.profile.dto.ProfileResponse;
 import com.isldevs.portfolio.profile.entity.Profile;
@@ -54,7 +55,7 @@ public class ProfileService {
   }
 
   public ProfileResponse update(Map<String, Object> input) {
-    input = com.isldevs.portfolio.common.json.ApiJsonNames.toInternal(input);
+    input = ApiJsonNames.toInternal(input);
     Profile p = require();
     Object v = input.get("version");
     if (!(v instanceof Number) || ((Number) v).longValue() != p.version)

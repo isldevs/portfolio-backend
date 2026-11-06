@@ -122,7 +122,7 @@ Install Newman using your normal approved tooling. Keep its reports and populate
 
 ## Validation performed for this change
 
-- 29 backend tests passed, including response-contract and profile-field filtering checks.
+- 30 backend tests passed, including response-contract and profile-field filtering checks.
 - JAR build and Spotless formatting checks passed.
 - Collection run on a disposable local backend: 125 assertions passed; password change was intentionally skipped. Profile-save and public-media upload/download/delete were exercised.
 - Default read-only collection run: 81 assertions passed.

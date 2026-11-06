@@ -4,25 +4,26 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class CustomExceptionHandler {
-  @ExceptionHandler(org.springframework.web.ErrorResponseException.class)
-  public org.springframework.http.ResponseEntity<ProblemDetail> errorResponse(
-      org.springframework.web.ErrorResponseException e) {
-    return new org.springframework.http.ResponseEntity<>(
-        e.getBody(), e.getHeaders(), e.getStatusCode());
+  @ExceptionHandler(ErrorResponseException.class)
+  public ResponseEntity<ProblemDetail> errorResponse(ErrorResponseException e) {
+    return new ResponseEntity<>(e.getBody(), e.getHeaders(), e.getStatusCode());
   }
 
-  @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
-  public ProblemDetail responseStatus(org.springframework.web.server.ResponseStatusException e) {
+  @ExceptionHandler(ResponseStatusException.class)
+  public ProblemDetail responseStatus(ResponseStatusException e) {
     return ProblemDetail.forStatusAndDetail(
         e.getStatusCode(), e.getReason() == null ? "Request failed." : e.getReason());
   }
