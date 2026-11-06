@@ -2,6 +2,12 @@
 
 Java 21 / Spring Boot REST API for Yi Sivlay's portfolio and technical-blog CMS. PostgreSQL holds content, profile data, administrator credentials, revisions, contact messages, media metadata, and audit events. Flyway migrations define the schema; Hibernate validates it. The companion `isldevs/portfolio-web` repository is independently built and released.
 
+## Backend structure and API testing
+
+- [Package structure and DTO contracts](docs/package-structure.md): where controllers, services, entities, repositories, DTOs, and mappers belong.
+- [Postman testing guide](docs/api-testing.md): import the collection/environment, sign in, run checks, and clean up test records.
+- [API testing files](api/README.md): collection, empty environment template, and exported OpenAPI schema.
+
 ## Manage content
 
 Start this backend, PostgreSQL, and the companion web application, then append `/admin/login` to the website address. Sign in through the website, not the backend's port. The public website footer also has an **Admin login** link.

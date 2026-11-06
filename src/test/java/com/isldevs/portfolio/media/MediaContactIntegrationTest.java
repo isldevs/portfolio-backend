@@ -123,13 +123,13 @@ class MediaContactIntegrationTest {
     jdbc.update("UPDATE profiles SET data=data-'portraitUrl'");
     UUID contentId = UUID.randomUUID();
     jdbc.update(
-        "INSERT INTO content_items(id,kind,title,slug) VALUES (?,?,?,?)",
+        "INSERT INTO contents(id,kind,title,slug) VALUES (?,?,?,?)",
         contentId,
         "articles",
         "Media revision test",
         "media-test-" + contentId);
     jdbc.update(
-        "INSERT INTO blog_revisions(id,content_id,snapshot,actor) VALUES"
+        "INSERT INTO blogs(id,content_id,snapshot,actor) VALUES"
             + " (?,?,jsonb_build_object('media',?::text),?)",
         UUID.randomUUID(),
         contentId,

@@ -6,7 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.fasterxml.jackson.databind.*;
-import com.isldevs.portfolio.auth.*;
+import com.isldevs.portfolio.auth.entity.User;
+import com.isldevs.portfolio.auth.repository.UserRepository;
 import java.util.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,9 +38,30 @@ class PortfolioIntegrationTest {
 
   @Autowired MockMvc mvc;
   @Autowired ObjectMapper json;
-  @Autowired
-  UserRepository users;
+  @Autowired UserRepository users;
   @Autowired PasswordEncoder encoder;
+
+  @Autowired com.isldevs.portfolio.profile.repository.ProfileRepository profiles;
+
+  @Test
+  void profileResponseUsesExplicitFieldsAndDoesNotLeakStorageMetadata() throws Exception {
+    var profile = profiles.findAll().getFirst();
+    profile.data.put("internalOnly", "must not be returned");
+    profiles.saveAndFlush(profile);
+    mvc.perform(get("/api/v1/public/profile"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(profile.id.toString()))
+        .andExpect(jsonPath("$.version").value(profile.version.intValue()))
+        .andExpect(jsonPath("$.fullName").value("Yi Sivlay"))
+        .andExpect(jsonPath("$.internalOnly").doesNotExist());
+    mvc.perform(get("/api/v1/public/projects").param("size", "0"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.size").value(1))
+        .andExpect(jsonPath("$.number").value(0))
+        .andExpect(jsonPath("$.totalElements").isNumber())
+        .andExpect(jsonPath("$.totalPages").isNumber())
+        .andExpect(jsonPath("$.content").isArray());
+  }
 
   private Map<String, Object> item(String title, String slug, String status) {
     return new LinkedHashMap<>(

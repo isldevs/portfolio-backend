@@ -2,9 +2,8 @@ package com.isldevs.portfolio.content;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.isldevs.portfolio.content.validation.StructuredContent;
 import java.util.*;
-
-import com.isldevs.portfolio.entity.content.StructuredContent;
 import org.junit.jupiter.api.Test;
 
 class StructuredContentTest {

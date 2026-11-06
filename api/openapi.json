@@ -7,7 +7,7 @@
   "servers": [
     {
       "url": "http://127.0.0.1:8080",
-      "description": "Generated server url"
+      "description": "Local backend; override for your development server"
     }
   ],
   "paths": {
@@ -42,7 +42,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentDto"
+                  "$ref": "#/components/schemas/ContentResponse"
                 }
               }
             }
@@ -77,7 +77,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ContentDto"
+                "$ref": "#/components/schemas/ContentRequest"
               }
             }
           },
@@ -89,7 +89,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentDto"
+                  "$ref": "#/components/schemas/ContentResponse"
                 }
               }
             }
@@ -148,8 +148,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {}
+                  "$ref": "#/components/schemas/ProfileResponse"
                 }
               }
             }
@@ -178,8 +177,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {}
+                  "$ref": "#/components/schemas/ProfileResponse"
                 }
               }
             }
@@ -210,7 +208,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Message"
+                  "$ref": "#/components/schemas/MessageResponse"
                 }
               }
             }
@@ -237,7 +235,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Update"
+                "$ref": "#/components/schemas/MessageUpdateRequest"
               }
             }
           },
@@ -249,7 +247,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Message"
+                  "$ref": "#/components/schemas/MessageResponse"
                 }
               }
             }
@@ -289,7 +287,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Submission"
+                "$ref": "#/components/schemas/ContactRequest"
               }
             }
           },
@@ -301,7 +299,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SubmissionResponse"
                 }
               }
             }
@@ -338,7 +336,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VersionBody"
+                "$ref": "#/components/schemas/VersionRequest"
               }
             }
           },
@@ -350,7 +348,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentDto"
+                  "$ref": "#/components/schemas/ContentResponse"
                 }
               }
             }
@@ -387,7 +385,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VersionBody"
+                "$ref": "#/components/schemas/VersionRequest"
               }
             }
           },
@@ -399,7 +397,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentDto"
+                  "$ref": "#/components/schemas/ContentResponse"
                 }
               }
             }
@@ -438,7 +436,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentDto"
+                  "$ref": "#/components/schemas/ContentResponse"
                 }
               }
             }
@@ -544,8 +542,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {}
+                  "$ref": "#/components/schemas/PageResponseContentResponse"
                 }
               }
             }
@@ -571,7 +568,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ContentDto"
+                "$ref": "#/components/schemas/ContentRequest"
               }
             }
           },
@@ -583,7 +580,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentDto"
+                  "$ref": "#/components/schemas/ContentResponse"
                 }
               }
             }
@@ -633,8 +630,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {}
+                  "$ref": "#/components/schemas/PageResponseMediaResponse"
                 }
               }
             }
@@ -685,7 +681,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/Asset"
+                  "$ref": "#/components/schemas/MediaResponse"
                 }
               }
             }
@@ -703,7 +699,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PasswordChange"
+                "$ref": "#/components/schemas/PasswordChangeRequest"
               }
             }
           },
@@ -739,7 +735,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Login"
+                "$ref": "#/components/schemas/LoginRequest"
               }
             }
           },
@@ -751,10 +747,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
+                  "$ref": "#/components/schemas/UserResponse"
                 }
               }
             }
@@ -792,7 +785,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VersionBody"
+                "$ref": "#/components/schemas/VersionRequest"
               }
             }
           },
@@ -804,7 +797,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentDto"
+                  "$ref": "#/components/schemas/ContentResponse"
                 }
               }
             }
@@ -902,8 +895,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {}
+                  "$ref": "#/components/schemas/PageResponseContentResponse"
                 }
               }
             }
@@ -941,7 +933,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentDto"
+                  "$ref": "#/components/schemas/ContentResponse"
                 }
               }
             }
@@ -961,8 +953,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {}
+                  "$ref": "#/components/schemas/ProfileResponse"
                 }
               }
             }
@@ -1024,10 +1015,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
+                  "$ref": "#/components/schemas/CsrfResponse"
                 }
               }
             }
@@ -1091,8 +1079,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {}
+                  "$ref": "#/components/schemas/PageResponseMessageResponse"
                 }
               }
             }
@@ -1144,8 +1131,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {}
+                  "$ref": "#/components/schemas/DashboardResponse"
                 }
               }
             }
@@ -1165,10 +1151,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
+                  "$ref": "#/components/schemas/UserResponse"
                 }
               }
             }
@@ -1190,8 +1173,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "additionalProperties": {}
+                    "$ref": "#/components/schemas/AuditResponse"
                   }
                 }
               }
@@ -1225,8 +1207,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "additionalProperties": {}
+                    "$ref": "#/components/schemas/RevisionResponse"
                   }
                 }
               }
@@ -1262,7 +1243,7 @@
   },
   "components": {
     "schemas": {
-      "ContentDto": {
+      "ContentRequest": {
         "type": "object",
         "properties": {
           "id": {
@@ -1329,7 +1310,119 @@
           "title"
         ]
       },
-      "Update": {
+      "ContentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "body": {
+            "$ref": "#/components/schemas/JsonNode"
+          },
+          "data": {
+            "$ref": "#/components/schemas/JsonNode"
+          },
+          "status": {
+            "type": "string"
+          },
+          "featured": {
+            "type": "boolean"
+          },
+          "displayOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "JsonNode": {},
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "professionalTitle": {
+            "type": "string"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "shortBio": {
+            "type": "string"
+          },
+          "fullBio": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "specialization": {
+            "type": "string"
+          },
+          "availability": {
+            "type": "string"
+          },
+          "githubUrl": {
+            "type": "string"
+          },
+          "linkedinUrl": {
+            "type": "string"
+          },
+          "publicEmail": {
+            "type": "string"
+          },
+          "portraitUrl": {
+            "type": "string"
+          },
+          "resumeUrl": {
+            "type": "string"
+          },
+          "seoTitle": {
+            "type": "string"
+          },
+          "seoDescription": {
+            "type": "string"
+          }
+        }
+      },
+      "MessageUpdateRequest": {
         "type": "object",
         "properties": {
           "status": {
@@ -1352,7 +1445,7 @@
           "version"
         ]
       },
-      "Message": {
+      "MessageResponse": {
         "type": "object",
         "properties": {
           "id": {
@@ -1390,7 +1483,7 @@
           }
         }
       },
-      "Submission": {
+      "ContactRequest": {
         "type": "object",
         "properties": {
           "name": {
@@ -1427,7 +1520,19 @@
           "subject"
         ]
       },
-      "VersionBody": {
+      "SubmissionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "VersionRequest": {
         "type": "object",
         "properties": {
           "version": {
@@ -1436,7 +1541,7 @@
           }
         }
       },
-      "Asset": {
+      "MediaResponse": {
         "type": "object",
         "properties": {
           "id": {
@@ -1469,7 +1574,7 @@
           }
         }
       },
-      "PasswordChange": {
+      "PasswordChangeRequest": {
         "type": "object",
         "properties": {
           "currentPassword": {
@@ -1486,7 +1591,7 @@
           "currentPassword"
         ]
       },
-      "Login": {
+      "LoginRequest": {
         "type": "object",
         "properties": {
           "username": {
@@ -1505,6 +1610,44 @@
           "username"
         ]
       },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "PageResponseContentResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContentResponse"
+            }
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "CsrfToken": {
         "type": "object",
         "properties": {
@@ -1516,6 +1659,150 @@
           },
           "headerName": {
             "type": "string"
+          }
+        }
+      },
+      "CsrfResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "headerName": {
+            "type": "string"
+          }
+        }
+      },
+      "PageResponseMessageResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageResponse"
+            }
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PageResponseMediaResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaResponse"
+            }
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AuditResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string"
+          },
+          "resource": {
+            "type": "string"
+          },
+          "resourceId": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "properties": {
+          "totalProjects": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "publishedProjects": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalArticles": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "publishedArticles": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "draftArticles": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "unreadMessages": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "recentActivity": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditResponse"
+            }
+          }
+        }
+      },
+      "RevisionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/ContentResponse"
           }
         }
       }

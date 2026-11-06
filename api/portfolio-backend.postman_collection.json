@@ -1,0 +1,1577 @@
+{
+  "info": {
+    "name": "Portfolio Backend API",
+    "description": "Run only against a disposable development/test database. Default allowWrites=false skips data-changing requests. Configure username/password privately. CSRF tokens are fetched before mutations and cookies are retained automatically. See docs/api-testing.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8080"
+    },
+    {
+      "key": "kind",
+      "value": "projects"
+    },
+    {
+      "key": "allowWrites",
+      "value": "false"
+    },
+    {
+      "key": "allowProfileUpdate",
+      "value": "false"
+    },
+    {
+      "key": "allowPasswordChange",
+      "value": "false"
+    },
+    {
+      "key": "username",
+      "value": ""
+    },
+    {
+      "key": "password",
+      "value": ""
+    },
+    {
+      "key": "newPassword",
+      "value": ""
+    },
+    {
+      "key": "mediaFile",
+      "value": ""
+    },
+    {
+      "key": "contentId",
+      "value": ""
+    },
+    {
+      "key": "contentVersion",
+      "value": ""
+    },
+    {
+      "key": "slug",
+      "value": ""
+    },
+    {
+      "key": "duplicateId",
+      "value": ""
+    },
+    {
+      "key": "duplicateVersion",
+      "value": ""
+    },
+    {
+      "key": "articleId",
+      "value": ""
+    },
+    {
+      "key": "articleVersion",
+      "value": ""
+    },
+    {
+      "key": "articleSlug",
+      "value": ""
+    },
+    {
+      "key": "revisionId",
+      "value": ""
+    },
+    {
+      "key": "messageId",
+      "value": ""
+    },
+    {
+      "key": "messageVersion",
+      "value": ""
+    },
+    {
+      "key": "mediaId",
+      "value": ""
+    },
+    {
+      "key": "profilePayload",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const method = pm.request.method;",
+          "const url = pm.variables.replaceIn(pm.request.url.toString());",
+          "const writes = !['GET', 'HEAD', 'OPTIONS'].includes(method);",
+          "const session = /\\/auth\\/(login|logout)$/.test(url);",
+          "if (writes && !session && pm.variables.get('allowWrites') !== 'true') {",
+          "  console.info('Skipped write request: set allowWrites=true only on a disposable test database.');",
+          "  pm.execution.skipRequest();",
+          "} else if (writes) {",
+          "  pm.sendRequest({url: pm.variables.get('baseUrl') + '/api/v1/csrf', method: 'GET'}, (error, response) => {",
+          "    if (error || response.code !== 200) throw new Error('Unable to obtain CSRF token; request aborted.');",
+          "    const csrf = response.json();",
+          "    pm.request.headers.upsert({key: csrf.headerName, value: csrf.token});",
+          "  });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Public API (read-only)",
+      "item": [
+        {
+          "name": "Local health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/actuator/health",
+            "description": "Available locally; production proxy intentionally hides actuator."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Healthy', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CSRF token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/csrf",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const csrf=pm.response.json(); pm.test('CSRF DTO',()=>{ pm.expect(csrf.token).to.be.a('string'); pm.expect(csrf.headerName).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/profile",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Profile DTO',()=>{ const profile=pm.response.json(); pm.expect(profile.id).to.be.a('string'); pm.expect(profile.version).to.be.a('number'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/projects?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/articles?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public case-studies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/case-studies?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public experiences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/experiences?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/skills?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/categories?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public tags",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/tags?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/settings?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Session",
+      "item": [
+        {
+          "name": "Anonymous identity must fail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/auth/me",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sign in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/auth/login",
+            "description": "Set username/password locally. Cookie jar keeps the session. Do not export populated credentials.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('User DTO',()=>{ const user=pm.response.json(); pm.expect(user.username).to.be.a('string'); pm.expect(user.role).to.eql('ADMIN'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Current administrator",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/auth/me",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Administrator reads",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/dashboard",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Dashboard DTO',()=>{ const data=pm.response.json(); pm.expect(data.recentActivity).to.be.an('array'); ['totalProjects','publishedProjects','totalArticles','publishedArticles','draftArticles','unreadMessages'].forEach(key=>pm.expect(data[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Audit activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/audit",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Audit DTO list',()=>pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/projects?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin articles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/articles?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin case-studies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/case-studies?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin experiences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/experiences?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin skills",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/skills?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/categories?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin tags",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/tags?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/settings?page=0&size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/profile",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('profilePayload', JSON.stringify(pm.response.json()));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inbox",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/messages?size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Media library",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/media?size=10",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json(); pm.test('Typed page envelope', () => { pm.expect(page.content).to.be.an('array'); ['totalElements','totalPages','number','size'].forEach(key => pm.expect(page[key]).to.be.a('number')); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Content lifecycle (enable allowWrites)",
+      "item": [
+        {
+          "name": "Create draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/{{kind}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"API collection test\",\n  \"slug\": \"{{slug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"displayOrder\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('slug', 'api-check-' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const item = pm.response.json(); pm.collectionVariables.set('contentId', item.id); pm.collectionVariables.set('contentVersion', String(item.version)); pm.collectionVariables.set('slug', item.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read created draft",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/{{kind}}/{{contentId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('allowWrites') !== 'true') pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json(); pm.collectionVariables.set('contentId', item.id); pm.collectionVariables.set('contentVersion', String(item.version)); pm.collectionVariables.set('slug', item.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Draft must stay private",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/{{kind}}/{{slug}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('allowWrites') !== 'true') pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update draft",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/{{kind}}/{{contentId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"API collection test updated\",\n  \"slug\": \"{{slug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"displayOrder\": 999,\n  \"version\": {{contentVersion}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json(); pm.collectionVariables.set('contentId', item.id); pm.collectionVariables.set('contentVersion', String(item.version)); pm.collectionVariables.set('slug', item.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Publish",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/{{kind}}/{{contentId}}/publish",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": {{contentVersion}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json(); pm.collectionVariables.set('contentId', item.id); pm.collectionVariables.set('contentVersion', String(item.version)); pm.collectionVariables.set('slug', item.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Public detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/{{kind}}/{{slug}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('allowWrites') !== 'true') pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Published content DTO',()=>{const item=pm.response.json();pm.expect(item.status).to.eql('PUBLISHED');pm.expect(item.body).to.be.an('object');pm.expect(item.data).to.be.an('object');});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Stale update must fail",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/{{kind}}/{{contentId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"API collection test\",\n  \"slug\": \"{{slug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"displayOrder\": 999,\n  \"version\": -1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicate as draft",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/{{kind}}/{{contentId}}/duplicate",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const item=pm.response.json();pm.collectionVariables.set('duplicateId',item.id);pm.collectionVariables.set('duplicateVersion',String(item.version));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete duplicate",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/{{kind}}/{{duplicateId}}?version={{duplicateVersion}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unpublish",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/{{kind}}/{{contentId}}/unpublish",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": {{contentVersion}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json(); pm.collectionVariables.set('contentId', item.id); pm.collectionVariables.set('contentVersion', String(item.version)); pm.collectionVariables.set('slug', item.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete created content",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/{{kind}}/{{contentId}}?version={{contentVersion}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Article revisions (enable allowWrites)",
+      "item": [
+        {
+          "name": "Create test article",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/articles",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"API collection test\",\n  \"slug\": \"{{articleSlug}}\",\n  \"summary\": \"Disposable API verification record.\",\n  \"body\": {\n    \"type\": \"doc\",\n    \"content\": [\n      {\n        \"type\": \"paragraph\",\n        \"content\": [\n          {\n            \"type\": \"text\",\n            \"text\": \"Created by the API test collection.\"\n          }\n        ]\n      }\n    ]\n  },\n  \"data\": {\n    \"category\": \"Testing\",\n    \"technologies\": [\n      \"Java\"\n    ],\n    \"tags\": [\n      \"api-test\"\n    ]\n  },\n  \"status\": \"DRAFT\",\n  \"featured\": false,\n  \"displayOrder\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('articleSlug','api-article-'+Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const item = pm.response.json(); pm.collectionVariables.set('articleId', item.id); pm.collectionVariables.set('articleVersion', String(item.version)); pm.collectionVariables.set('articleSlug', item.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List revisions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/articles/{{articleId}}/revisions",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('allowWrites') !== 'true') pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const revisions=pm.response.json(); pm.test('Typed revision snapshot',()=>pm.expect(revisions[0].snapshot.title).to.be.a('string'));pm.collectionVariables.set('revisionId',revisions[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restore revision as draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/articles/{{articleId}}/revisions/{{revisionId}}/restore",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"version\": {{articleVersion}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json(); pm.collectionVariables.set('articleId', item.id); pm.collectionVariables.set('articleVersion', String(item.version)); pm.collectionVariables.set('articleSlug', item.slug);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete test article",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/articles/{{articleId}}?version={{articleVersion}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 Contact inbox lifecycle (enable allowWrites)",
+      "item": [
+        {
+          "name": "Submit contact message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/public/contact",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"API Test Visitor\",\n  \"email\": \"api-test@example.com\",\n  \"subject\": \"Disposable API collection message\",\n  \"message\": \"This is a test message from the API collection.\",\n  \"website\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('messageId',pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Read message",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/messages/{{messageId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('allowWrites') !== 'true') pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('messageVersion',String(pm.response.json().version));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark message read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/messages/{{messageId}}",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\":\"READ\",\"version\":{{messageVersion}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Message DTO',()=>pm.expect(pm.response.json().status).to.eql('READ'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete test message",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/messages/{{messageId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 Optional manual operations",
+      "item": [
+        {
+          "name": "Save unchanged profile (opt-in)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/profile",
+            "description": "Requires allowWrites=true and allowProfileUpdate=true. Reads must have captured the current profile. This saves current values and advances version.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{profilePayload}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.variables.get('allowProfileUpdate')!=='true') pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload public media (choose a file)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/media?visibility=PUBLIC",
+            "description": "Set mediaFile to an allowed local PNG/JPEG/GIF/WebP/PDF file, or select a file in Body \u2192 form-data. Requires allowWrites=true.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{mediaFile}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(!pm.variables.get('mediaFile')) pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('mediaId',pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download public media",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/public/media/{{mediaId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.variables.get('allowWrites')!=='true'||!pm.variables.get('mediaId')) pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download media as administrator",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/media/{{mediaId}}/content",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.variables.get('allowWrites')!=='true'||!pm.variables.get('mediaId')) pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete uploaded test media",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/media/{{mediaId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.variables.get('allowWrites')!=='true'||!pm.variables.get('mediaId')) pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change password (manual opt-in)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/auth/password",
+            "description": "Requires allowWrites=true and allowPasswordChange=true. Changes the actual test account password and ends sessions; leave disabled in the normal runner.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{password}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if(pm.variables.get('allowPasswordChange')!=='true') pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 End session",
+      "item": [
+        {
+          "name": "Sign out",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/auth/logout",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Identity after logout must fail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/admin/auth/me",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
